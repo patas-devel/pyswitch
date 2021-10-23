@@ -1,0 +1,4 @@
+MAC ADDR       VLAN ID  STATE          PORT INDEX               AGING TIME(s)
+0021-5ef0-adb4 1601     Learned        GigabitEthernet2/0/43    AGING
+
+  ---  1 mac address(es) found  ---

@@ -1,0 +1,2 @@
+# pyswitch
+Sprava configurace switchu

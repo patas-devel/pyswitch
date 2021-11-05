@@ -6,12 +6,15 @@
 # https://docs.sqlalchemy.org/en/latest/orm/tutorial.html#building-a-relationship
 
 import os, sys
+from typing import NewType
 from sqlalchemy import Date, Column, ForeignKey, Integer, String, func, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime, date
+
+from sqlalchemy.sql.sqltypes import DECIMAL, VARCHAR
 
 Base = declarative_base()
 
@@ -54,7 +57,20 @@ class Rack(Base):
     management_ports = Column(Integer)
     filled_positions = Column(Integer)
     location_id = Column(Integer)
-    migration = Column(Integer) 
+    migration = Column(Integer)
+
+class Network(Base):
+    __tablename__ = 'networking_interface'
+    id = Column(Integer, primary_key=True)
+    ip = Column(DECIMAL(39,0))
+    subnet_id = Column(Integer)
+    machine_id = Column(Integer)
+    type = Column(VARCHAR(32))
+    mac = Column(VARCHAR(17)) 
+    is_primary = Column(Integer)
+    dhcp_options = Column(VARCHAR(256))
+    port = Column(Integer)
+
 
 # INIT CONNECTION ans SESSIONS
 # DB LOCAL
@@ -118,19 +134,35 @@ def get_server_age(server_name):
     else:
         return 0
 
-
-def get_server_switch_port(server_name):
-    server = session.query(Machines).filter(Machines.name == server_name).filter(Machines.site_id == 1).first()
-    return server.switch_port
-
+# GET
 def get_server_rack(server_name):
-    server = session.query(Machines).filter(Machines.name == server_name).filter(Machines.site_id == 1).first()
-    #print(server.rack_id)
+    server = session.query(Machines).filter(Machines.name == server_name and Machines.site_id == 1).first()
+#    print(server.rack_id)
     rack = session.query(Rack).filter(Rack.id == server.rack_id).first()
+#    print(rack)
     return rack.name
 
+def get_server_id(server_name):
+    server = session.query(Machines).filter(Machines.name == server_name and Machines.site_id == 1).first()
+#    print(server.id)
+    return server.id
+
+# GET
+def get_switch_port(server_id, etype):
+    if etype == 'eth':
+        port = session.query(Network).filter(Network.machine_id == server_id and Network.type == eth_type).first()
+    elif etype == 'mgmt':
+        port = session.query(Network).filter(Network.machine_id == server_id and Network.type == eth_type).first()
+    else:
+        print('nebyl zadan typ adapteru!')
+    return port.port  
+
+def get_mgmt_switch_port(server):
+    rack = session.query(Rack).filter(Rack.name == server_rack).first()
+    return rack.management_ports
+# SET
 def set_server_age(server_name, server_age):
-    server = session.query(Machines).filter(Machines.name == server_name).filter(Machines.site_id == 1).first()
+    server = session.query(Machines).filter(Machines.name == server_name and Machines.site_id == 1).first()
     server.age = server_age
     session.commit()
 
@@ -140,8 +172,17 @@ def set_server_age(server_name, server_age):
 #print(get_servers(1))
 #print(get_choice())
 #print(get_server_age('bbhp1'))
-server = 'gmmr1'
-print(f'Server: {server} ma na switch {get_server_rack(server)} port: {get_server_switch_port(server)}')
+os.system('clear')
+server = 'bbbe2'
+try:
+    server_rack = get_server_rack(server)
+    server_id = get_server_id(server)
+except AttributeError as error:
+    print('Server pravdepodobne neexistuje.')
+else:
+    access = get_switch_port(server_id, 'eth')
+    mgmt =  get_switch_port(server_id, 'mgmt')
+    print(f'MOTHER:\n\tSERVER:\t{server}\n\tRACK:\t{server_rack}\n\tPORT:\t{access}\n\tMGMT:\t{mgmt}')
 
 # COUNT - OK
 #all = session.query(func.count(Machines.name)).all()

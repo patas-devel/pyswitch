@@ -83,11 +83,11 @@ class Switch():
     ''' Class switch '''
 
 
-    def __init__(self, sw_dc='', sw_name='', sw_ip='', sw_port='', sw_desc='', sw_out=''):
-        self.sw_dc = sw_dc
+    def __init__(self, sw_name='', sw_ip='', sw_port='', sw_dc='', sw_desc='', sw_out=''):
         self.sw_name = sw_name
         self.sw_ip = sw_ip
         self.sw_port = sw_port
+        self.sw_dc = sw_dc
         self.sw_desc = sw_desc
         self.out = sw_out
         self.ini_file = 'switch.ini' # config file

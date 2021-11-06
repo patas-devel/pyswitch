@@ -13,11 +13,11 @@ from sqlalchemy.orm import relationship
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime, date
-
+from sqlalchemy.sql.expression import column
 from sqlalchemy.sql.sqltypes import DECIMAL, VARCHAR
 
-Base = declarative_base()
 
+Base = declarative_base()
 # DB
 mysql_pass_local = 'jsem.SQL1'
 mysql_pass_prod = 'f72d647a45bded34f637008b4fa10109345bfcff5d3c7b5973a2260f5815f76e'
@@ -47,6 +47,15 @@ class Machines(Base):
     state_id = Column(Integer)
     site_id = Column(Integer)
 
+class Domain(Base):
+    __tablename__ = 'domains'
+    id = Column(Integer, primary_key=True)
+    name = Column(VARCHAR(255))
+    type = Column(VARCHAR(6))
+    notified_serial = Column(Integer)
+    master = Column(VARCHAR(128))
+    last_check = Column(Integer)
+    account = Column(VARCHAR(40))
 
 class Rack(Base):
     __tablename__ = 'machines_rack'
@@ -70,6 +79,26 @@ class Network(Base):
     is_primary = Column(Integer)
     dhcp_options = Column(VARCHAR(256))
     port = Column(Integer)
+
+class Subnet(Base):
+    __tablename__ = 'networking_subnet'
+    id = Column(Integer, primary_key=True)
+    ip = Column(DECIMAL(39,0))
+    vlan_id = Column(Integer)
+    prefix = Column(Integer)
+    default_gw_mac = Column(VARCHAR(17))
+    dhcp_templat = Column(text)
+    notes = Column(text) 
+    # Text(4294000000) as longtext
+    domain_id = column(Integer)
+    rev_domain_id = Column(Integer)
+
+class Vlan(Base):
+    __tablename__ = 'networking_vlan'
+    id = Column(Integer, primary_key=True)
+    name = Column(VARCHAR(128))
+    vlan_id = column(Integer)
+    notes = Column(text)
 
 
 # INIT CONNECTION ans SESSIONS
@@ -150,9 +179,9 @@ def get_server_id(server_name):
 # GET
 def get_switch_port(server_id, etype):
     if etype == 'eth':
-        port = session.query(Network).filter(Network.machine_id == server_id and Network.type == eth_type).first()
+        port = session.query(Network).filter(Network.machine_id == server_id and Network.type == etype and Network.is_primary == 1).first()
     elif etype == 'mgmt':
-        port = session.query(Network).filter(Network.machine_id == server_id and Network.type == eth_type).first()
+        port = session.query(Network).filter(Network.machine_id == server_id and Network.type == etype).first()
     else:
         print('nebyl zadan typ adapteru!')
     return port.port  
@@ -160,20 +189,18 @@ def get_switch_port(server_id, etype):
 def get_mgmt_switch_port(server):
     rack = session.query(Rack).filter(Rack.name == server_rack).first()
     return rack.management_ports
+
+##################################################
 # SET
 def set_server_age(server_name, server_age):
     server = session.query(Machines).filter(Machines.name == server_name and Machines.site_id == 1).first()
     server.age = server_age
     session.commit()
 
-# MAIN
 
-# QUERY
-#print(get_servers(1))
-#print(get_choice())
-#print(get_server_age('bbhp1'))
+# MAIN
 os.system('clear')
-server = 'bbbe2'
+server = 'gmn1005'
 try:
     server_rack = get_server_rack(server)
     server_id = get_server_id(server)

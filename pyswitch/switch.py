@@ -8,10 +8,11 @@
 import os, sys
 import pynetwork as net
 import pyswitch as switch
+import pydb as db
 
 
 def main():
-    pass
+    os.system('clear')
 
 # MAIN
 if __name__ == "__main__":

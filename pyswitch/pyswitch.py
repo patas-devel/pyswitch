@@ -61,24 +61,8 @@ switches_ttc = [
 ]
 
 
+
 # CLASS
-class Device():
-    pass
-
-class Server():
-    ''' Class Server '''
-
-    def __init__(self, srv_name='', srv_ip='', srv_mac='', srv_vendor='', srv_model=''):
-        self.srv_name = srv_name
-        self.srv_ip = srv_ip
-        self.srv_mac = srv_mac
-        self.srv_vendor = srv_vendor
-        self.srv_model = srv_model
-
-    def __str__(self):
-        return self.sw_name
-
-
 class Switch():
     ''' Class switch '''
 
@@ -90,7 +74,7 @@ class Switch():
         self.sw_dc = sw_dc
         self.sw_desc = sw_desc
         self.out = sw_out
-        self.ini_file = 'switch.ini' # config file
+        self.ini_file = 'settings.ini' # config file
 
     # https://wiki.python.org/moin/ConfigParserExamples
     def config_init(self):
@@ -270,7 +254,6 @@ def show_config():
 # MAIN
 DEBUG = True
 os.system('clear')
-sr = Server()
 sw = Switch('','AB13.TTC', '10.33.240.43', '26')
 #sw.get_info('display interface brief')
 #sw.get_config()

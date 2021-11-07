@@ -12,14 +12,8 @@ import argparse
 import configparser
 import pyswitch as sw
 from termcolor import colored
+import pyconfig as conf
 
-def config():
-    # https://wiki.python.org/moin/ConfigParserExamples
-    settings_file = 'settings.ini'
-    settings = configparser.ConfigParser()
-    settings._interpolation = configparser.ExtendedInterpolation()
-    settings.read(settings_file)
-    return settings
 
 # MAIN
 def main():
@@ -28,16 +22,6 @@ def main():
     #s = sw.Switch('AB13.TTC', '10.33.240.43', '26')
     #cmd = 'display version'
     #s.get_info(cmd)
-
-
-#sw = Switch('','AB13.TTC', '10.33.240.43', '26')
-#sw.get_info('display interface brief')
-#sw.get_config()
-#show_config()
-#mac_find('0021-5ef0-adb4')
-#show_config('','')
-#mac_find('00215ef0adb4')
-
     # OK
     server = 'bbbe1'
     mix = db.session.query(db.Subnet).join(db.Interface).join(db.Machine).filter(db.Machine.name == server).first()

@@ -12,21 +12,18 @@ from datetime import datetime, date
 from sqlalchemy.sql.expression import column
 from sqlalchemy.sql.sqltypes import DECIMAL, VARCHAR
 import ipaddress
-import switch
+import pyconfig as conf
 
 
 # setup for connection to switch
-setup = switch.config()
-dbuser = setup.get('db-dev', 'user')
-dbpass = setup.get('db-dev', 'pass')
-dbname = setup.get('db-dev', 'dbname')
-print(f'{dbuser}, {dbpass}, {dbname}')
+setup = conf.Config('db-dev')
+dbuser = setup.get_value('user')
+dbpass = setup.get_value('pass')
+dbname = setup.get_value('dbname')
+#print(f'{dbuser}, {dbpass}, {dbname}')
 
+# DB INIT
 Base = declarative_base()
-# DB
-#mysql_pass_prod = 'f72d647a45bded34f637008b4fa10109345bfcff5d3c7b5973a2260f5815f76e'
-# INIT CONNECTION ans SESSIONS
-# DB LOCAL
 conn_str = 'mysql://root:' + dbpass + '@127.0.0.1/' + dbname
 engine = create_engine(conn_str, echo=False)
 conn = engine.connect()

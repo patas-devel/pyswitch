@@ -6,11 +6,11 @@
 # KDY: @ 10/2021
 
 import os
-import pynetwork as net
+#import pynetwork as net
 import pydb as db
 import argparse
 import configparser
-import pyswitch as switch
+import pyswitch as sw
 from termcolor import colored
 
 def config():
@@ -20,21 +20,14 @@ def config():
     settings._interpolation = configparser.ExtendedInterpolation()
     settings.read(settings_file)
     return settings
- 
-
-
 
 # MAIN
 def main():
     os.system('clear')
     print(colored('##################################################', 'green'))
-    setup = config()
-    sw = switch.Switch('AB13.TTC', '10.33.240.43', '26')
-    sw.swuser = setup.get('switch', 'user')
-    sw.swpass = setup.get('switch', 'pass')
-    sw.swtype = setup.get('switch', 'type')
-    cmd = 'display version'
-    sw.get_info(cmd)
+    #s = sw.Switch('AB13.TTC', '10.33.240.43', '26')
+    #cmd = 'display version'
+    #s.get_info(cmd)
 
 
 #sw = Switch('','AB13.TTC', '10.33.240.43', '26')
@@ -48,7 +41,7 @@ def main():
     # OK
     server = 'bbbe1'
     mix = db.session.query(db.Subnet).join(db.Interface).join(db.Machine).filter(db.Machine.name == server).first()
-    #print(f'---Vlan_id={mix.vlan_id}')
+    print(f'VLAN_id={mix.vlan_id}')
     mix2 = db.session.query(db.Vlan).filter(db.Vlan.id == mix.vlan_id).first()
     print(f'Vlan-name:\t{mix2.name}\nVlan-cislo:\t{mix2.id_vlan}')
 

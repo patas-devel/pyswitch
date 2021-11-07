@@ -18,6 +18,8 @@ import netaddr
 from netaddr import EUI
 from netmiko import ConnectHandler
 from colorama import Fore, Style
+import configparser
+import switch as sw
 
 # VARS
 switches_stl = [
@@ -60,19 +62,20 @@ switches_ttc = [
     { 'ab14': '10.33.240.44' },
 ]
 
-DEBUG = False
+# setup for connection to switch
+setup = sw.config()
+swuser = setup.get('switch', 'user')
+swpass = setup.get('switch', 'pass')
+swtype = setup.get('switch', 'type')
 
 # CLASS
 class Switch():
     ''' Class switch '''
-    swpass = ''    
-    swuser = ''
-    swtype = ''
 
-    def __init__(self, name='', swip='', swport='', dc='', desc='', out=''):
+    def __init__(self, name='', ip='', port='', dc='', desc='', out=''):
         self.sw_name = name
-        self.sw_ip = swip
-        self.sw_port = swport
+        self.sw_ip = ip
+        self.sw_port = port
         self.sw_dc = dc
         self.sw_desc = desc
         self.sw_out = out

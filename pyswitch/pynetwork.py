@@ -15,8 +15,8 @@ import ipaddress
 
 Base = declarative_base()
 # DB
-mysql_pass_local = 'jsem.SQL1'
-mysql_pass_prod = 'f72d647a45bded34f637008b4fa10109345bfcff5d3c7b5973a2260f5815f76e'
+mysql_pass_local = ''
+mysql_pass_prod = ''
 # INIT CONNECTION ans SESSIONS
 # DB LOCAL
 conn_str = 'mysql://root:' + mysql_pass_local + '@127.0.0.1/mother'
@@ -124,42 +124,42 @@ class Vlan(Base):
 
 
 # MAIN - BASIC OPERATION
-os.system('clear')
-server_name = 'vmadb1'
-
-#MACHINE
-srv = session.query(Machine).filter(Machine.name == server_name and Machine.site_id ==1).first()
-server_id = srv.id
-print(f'Server:\t\t{srv.name}')
-
-# INTERFACE
-int = session.query(Interface).filter(Interface.machine_id == server_id).first()
-#print(f'mac={int.mac}, type={int.type}, port={int.port}, subnet={int.subnet_id}')
-subnet_id = int.subnet_id
-#print(f'interface_id:\t{subnet_id}')
-
-# RACK
-rk = session.query(Rack).filter(Rack.id == srv.rack_id).first()
-print(f'rack:\t\t{rk.name}')
-
-
-# SUBNET
-t1 = session.query(Subnet).filter(Subnet.id == subnet_id).first()
-#print(f'subnet:\t{t1.vlan_id}')
-vlan_id = t1.vlan_id
-ip = round((t1.ip))
-ipv = str(ipaddress.IPv4Address(ip))
-#print(ipv)
-
-# VLAN
-#t2 = session.query(Vlan).filter(Vlan.id == vlan_id).first()
-#print(f'Vlan_name={t2.name}, Vlan_c={t2.id_vlan}')
-
-# OK
-mix = session.query(Subnet).join(Interface).join(Machine).filter(Machine.name == server_name).first()
-#print(f'---Vlan_id={mix.vlan_id}')
-mix2 = session.query(Vlan).filter(Vlan.id == mix.vlan_id).first()
-print(f'Vlan-name:\t{mix2.name}\nVlan-cislo:\t{mix2.id_vlan}')
+#os.system('clear')
+#server_name = 'vmadb1'
+#
+##MACHINE
+#srv = session.query(Machine).filter(Machine.name == server_name and Machine.site_id ==1).first()
+#server_id = srv.id
+#print(f'Server:\t\t{srv.name}')
+#
+## INTERFACE
+#int = session.query(Interface).filter(Interface.machine_id == server_id).first()
+##print(f'mac={int.mac}, type={int.type}, port={int.port}, subnet={int.subnet_id}')
+#subnet_id = int.subnet_id
+##print(f'interface_id:\t{subnet_id}')
+#
+## RACK
+#rk = session.query(Rack).filter(Rack.id == srv.rack_id).first()
+#print(f'rack:\t\t{rk.name}')
+#
+#
+## SUBNET
+#t1 = session.query(Subnet).filter(Subnet.id == subnet_id).first()
+##print(f'subnet:\t{t1.vlan_id}')
+#vlan_id = t1.vlan_id
+#ip = round((t1.ip))
+#ipv = str(ipaddress.IPv4Address(ip))
+##print(ipv)
+#
+## VLAN
+##t2 = session.query(Vlan).filter(Vlan.id == vlan_id).first()
+##print(f'Vlan_name={t2.name}, Vlan_c={t2.id_vlan}')
+#
+## OK
+#mix = session.query(Subnet).join(Interface).join(Machine).filter(Machine.name == server_name).first()
+##print(f'---Vlan_id={mix.vlan_id}')
+#mix2 = session.query(Vlan).filter(Vlan.id == mix.vlan_id).first()
+#print(f'Vlan-name:\t{mix2.name}\nVlan-cislo:\t{mix2.id_vlan}')
 
 #server = srv.name + '.cent.'
 #test = session.query(Record).filter(Record.content == server).all()

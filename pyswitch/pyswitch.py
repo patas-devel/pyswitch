@@ -11,13 +11,13 @@
 # - overit ze hostname sw ma ip adresu z moji tabulky !
 
 # MODULS
+from re import I
 import sys, os
 import subprocess
-from netmiko import ConnectHandler
-import argparse
-import configparser
 import netaddr
 from netaddr import EUI
+from netmiko import ConnectHandler
+from colorama import Fore, Style
 
 # VARS
 switches_stl = [
@@ -60,32 +60,26 @@ switches_ttc = [
     { 'ab14': '10.33.240.44' },
 ]
 
-
+DEBUG = False
 
 # CLASS
 class Switch():
     ''' Class switch '''
+    swpass = ''    
+    swuser = ''
+    swtype = ''
 
-
-    def __init__(self, sw_name='', sw_ip='', sw_port='', sw_dc='', sw_desc='', sw_out=''):
-        self.sw_name = sw_name
-        self.sw_ip = sw_ip
-        self.sw_port = sw_port
-        self.sw_dc = sw_dc
-        self.sw_desc = sw_desc
-        self.out = sw_out
-        self.ini_file = 'settings.ini' # config file
-
-    # https://wiki.python.org/moin/ConfigParserExamples
-    def config_init(self):
-        self.settings = configparser.ConfigParser()
-        self.settings._interpolation = configparser.ExtendedInterpolation()
-        self.settings.read(self.ini_file)
+    def __init__(self, name='', swip='', swport='', dc='', desc='', out=''):
+        self.sw_name = name
+        self.sw_ip = swip
+        self.sw_port = swport
+        self.sw_dc = dc
+        self.sw_desc = desc
+        self.sw_out = out
 
     def sw_connect(self):
-        self.config_init()
         print(f'Connecting to switch: {self.sw_name} [{self.sw_ip}]\n')
-        self.device = ConnectHandler(device_type=self.settings.get('switch', 'type'), ip=self.sw_ip, username=self.settings.get('switch', 'user'), password=self.settings.get('switch', 'pass'))
+        self.device = ConnectHandler(device_type=self.swtype, ip=self.sw_ip, username=self.swuser, password=self.swpass)
 
     def __str__(self):
         return f'SWITCH\nDC: {self.sw_dc}\nSWITCH: {self.sw_name}\nIP: {self.sw_ip}\nPORT: {self.sw_port}\nDESC: {self.sw_desc}' 
@@ -94,9 +88,10 @@ class Switch():
         return f'DC: {self.sw_dc}, SWITCH: {self.sw_name}, IP: {self.sw_ip}, PORT: {self.sw_port}, DESC: {self.sw_desc}' 
 
     def get_info(self, cmd):
+        self.sw_connect()
         self.sw_out = self.device.send_command(cmd)
-        if DEBUG:
-            print(f'Vypis: {self.sw_out}\n')
+        print(f'{Fore.GREEN}{self.sw_out}{Style.RESET_ALL}')
+        self.sw_disconnect()
 
     def get_config(self):
         self.sw_connect()
@@ -252,9 +247,10 @@ def show_config():
     
 
 # MAIN
-DEBUG = True
-os.system('clear')
-sw = Switch('','AB13.TTC', '10.33.240.43', '26')
+#DEBUG = True
+#os.system('clear')
+
+#sw = Switch('','AB13.TTC', '10.33.240.43', '26')
 #sw.get_info('display interface brief')
 #sw.get_config()
 #show_config()

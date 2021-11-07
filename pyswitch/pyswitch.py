@@ -21,46 +21,39 @@ from colorama import Fore, Style
 import pyconfig as conf
 
 
-# VARS
-switches_stl = [
-    { 'aa01': '10.32.240.11' },
-    { 'aa02': '10.32.240.12' },
-    { 'aa03': '10.32.240.13' },
-    { 'aa04': '10.32.240.14' },
-    { 'aa05': '10.32.240.15' },
-    { 'ab01': '10.32.240.31' },
-    { 'ab02': '10.32.240.32' },
-    { 'ab03': '10.32.240.33' },
-    { 'ab04': '10.32.240.34' },
-    { 'ab05': '10.32.240.35' },
-]
-
-
-# aa08, ab08,ab10,ab11,ab12 nejsou
-switches_ttc = [
-    { 'aa01': '10.33.240.11' },
-    { 'aa02': '10.33.240.12' },
-    { 'aa03': '10.33.240.13' },
-    { 'aa04': '10.33.240.14' },
-    { 'aa05': '10.33.240.15' },
-    { 'aa06': '10.33.240.16' },
-    { 'aa07': '10.33.240.17' },
-
-    { 'aa09': '10.33.240.19' },
-    { 'aa10': '10.33.240.10' },
-    
-    { 'ab01': '10.33.240.31' },
-    { 'ab02': '10.33.240.32' },
-    { 'ab03': '10.33.240.33' },
-    { 'ab04': '10.33.240.34' },
-    { 'ab05': '10.33.240.35' },
-    { 'ab06': '10.33.240.36' },
-    { 'ab07': '10.33.240.37' },
-    
-    { 'ab09': '10.33.240.39' },
-    { 'ab13': '10.33.240.43' },
-    { 'ab14': '10.33.240.44' },
-]
+# VAR
+# # aa08, ab08,ab10,ab11,ab12 nejsou
+switches = { 
+     'aa01.stl': '10.32.240.11',
+     'aa02.stl': '10.32.240.12',
+     'aa03.stl': '10.32.240.13',
+     'aa04.stl': '10.32.240.14',
+     'aa05.stl': '10.32.240.15',
+     'ab01.stl': '10.32.240.31',
+     'ab02.stl': '10.32.240.32',
+     'ab03.stl': '10.32.240.33',
+     'ab04.stl': '10.32.240.34',
+     'ab05.stl': '10.32.240.35',
+     'aa01.ttc': '10.33.240.11',
+     'aa02.ttc': '10.33.240.12',
+     'aa03.ttc': '10.33.240.13',
+     'aa04.ttc': '10.33.240.14',
+     'aa05.ttc': '10.33.240.15',
+     'aa06.ttc': '10.33.240.16',
+     'aa07.ttc': '10.33.240.17',
+     'aa09.ttc': '10.33.240.19',
+     'aa10.ttc': '10.33.240.10',
+     'ab01.ttc': '10.33.240.31',
+     'ab02.ttc': '10.33.240.32',
+     'ab03.ttc': '10.33.240.33',
+     'ab04.ttc': '10.33.240.34',
+     'ab05.ttc': '10.33.240.35',
+     'ab06.ttc': '10.33.240.36',
+     'ab07.ttc': '10.33.240.37',
+     'ab09.ttc': '10.33.240.39',
+     'ab13.ttc': '10.33.240.43',
+     'ab14.ttc': '10.33.240.44',
+}
 
 # Login information
 setup = conf.Config('switch')
@@ -94,9 +87,15 @@ class Switch():
     def get_info(self, cmd):
         self.sw_connect()
         self.sw_out = self.device.send_command(cmd)
-        print(f'{Fore.GREEN}{self.sw_out}{Style.RESET_ALL}')
+        print(f'{Fore.BLUE}{self.sw_out}{Style.RESET_ALL}')
         self.sw_disconnect()
 
+    def set_desc(self, cmd):
+        self.sw_connect()
+        self.sw_out = self.device.send_config_set(cmd)
+        print(f'{Fore.BLUE}{self.sw_out}{Style.RESET_ALL}')
+        self.sw_disconnect()
+    
     def get_config(self):
         self.sw_connect()
         cmd = 'display current-configuration interface g1/0/' + str(self.sw_port)
@@ -111,7 +110,7 @@ class Switch():
         self.sw_connect()
         self.sw_note = 'description ' + note 
         configcmds=[self.sw_port, self.sw_note]
-        #configcmds=['interface g1/0/9', 'description TESTING1']
+        #configcmds=['interface g1/0/26', 'description TESTING1']
         self.sw_out = self.device.send_config_set(configcmds)
         if DEBUG:
             print(self.sw_out)

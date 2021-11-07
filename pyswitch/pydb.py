@@ -65,6 +65,7 @@ class Machine(Base):
     age = Column(Integer)
     inventory = Column(String(32), nullable=False)
     HeliosID = Column(String(10))
+    qr_code = Column(Integer)
     purchase_date = Column(Date)
     type_id = Column(Integer)
     serial_number = Column(String(128))
@@ -78,6 +79,15 @@ class Machine(Base):
     switch_port = Column(String(32))
     state_id = Column(Integer)
     site_id = Column(Integer)
+
+class Type(Base):
+    __tablename__ = 'machines_machinetype'
+    id = Column(Integer, primary_key=True)
+    name = Column(VARCHAR(128))
+    unit_size = Column(Integer)
+    power_drain_avg = Column(Integer)
+    power_drain_max = Column(Integer) 
+    color = Column(VARCHAR(32))
 
 class Rack(Base):
     __tablename__ = 'machines_rack'
@@ -127,38 +137,43 @@ class Vlan(Base):
     id_vlan = Column(Integer)
     notes = Column(VARCHAR(128))
 
-
 # MAIN - TESTING 
 #os.system('clear')
 #server_name = 'vmadb1'
 
 #MACHINE
-#srv = session.query(Machine).filter(Machine.name == server_name and Machine.site_id ==1).first()
-#server_id = srv.id
-#print(f'Server:\t\t{srv.name}')
+def get_server(server):
+    srv = session.query(Machine).filter(Machine.name == server and Machine.site_id ==1).first()
+    print(f'Server:\t\t{srv.name}')
+    return srv
 
 # INTERFACE
-#int = session.query(Interface).filter(Interface.machine_id == server_id).first()
-#print(f'mac={int.mac}, type={int.type}, port={int.port}, subnet={int.subnet_id}')
-#subnet_id = int.subnet_id
-#print(f'interface_id:\t{subnet_id}')
+def get_interface(server_id):
+    int = session.query(Interface).filter(Interface.machine_id == server_id).first()
+    print(f'mac={int.mac}, type={int.type}, port={int.port}, subnet={int.subnet_id}')
+    subnet_id = int.subnet_id
+    print(f'interface_id:\t{subnet_id}')
+    return int
 
 # RACK
-#rk = session.query(Rack).filter(Rack.id == srv.rack_id).first()
-#print(f'rack:\t\t{rk.name}')
-
+def get_rack(rack_id):
+    rk = session.query(Rack).filter(Rack.id == srv.rack_id).first()
+    print(f'rack:\t\t{rk.name}')
+    return rk
 
 # SUBNET
-#t1 = session.query(Subnet).filter(Subnet.id == subnet_id).first()
-#print(f'subnet:\t{t1.vlan_id}')
-#vlan_id = t1.vlan_id
-#ip = round((t1.ip))
-#ipv = str(ipaddress.IPv4Address(ip))
-#print(ipv)
+def get_subnet(subnet_id):
+    t1 = session.query(Subnet).filter(Subnet.id == subnet_id).first()
+    print(f'subnet:\t{t1.vlan_id}')
+    vlan_id = t1.vlan_id
+    ip = round((t1.ip))
+    ipv = str(ipaddress.IPv4Address(ip))
+    print(ipv)
 
 # VLAN
-#t2 = session.query(Vlan).filter(Vlan.id == vlan_id).first()
-#print(f'Vlan_name={t2.name}, Vlan_c={t2.id_vlan}')
+def get_vlan(vlan_id):
+    t2 = session.query(Vlan).filter(Vlan.id == vlan_id).first()
+    print(f'Vlan_name={t2.name}, Vlan_c={t2.id_vlan}')
 
 # OK - GOOD
 #mix = session.query(Subnet).join(Interface).join(Machine).filter(Machine.name == server_name).first()

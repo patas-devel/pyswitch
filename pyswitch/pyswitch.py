@@ -106,7 +106,7 @@ class Switch():
         self.get_info(cmd)
         self.sw_disconnect()
 
-    def set_config(self, note):
+    def set_config_old(self, note):
         self.sw_connect()
         self.sw_note = 'description ' + note 
         configcmds=[self.sw_port, self.sw_note]

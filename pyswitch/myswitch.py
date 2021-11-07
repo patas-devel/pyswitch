@@ -95,6 +95,12 @@ def set_sw_desc(vstup, cmd):
     s = sw.Switch(vstup.switch, sw.switches[vstup.switch], vstup.port)
     s.set_desc(cmd)
 
+def printb(text):
+    print(colored(text, 'blue'))
+
+def printy(text):
+    print(colored(text, 'yellow'))
+
 
 # MAIN
 def main():
@@ -113,9 +119,9 @@ def main():
         #dev.show()
         print(vstup.info)
     if vstup.info == None:
-        print(colored('# MOTHER INFO ##################################################', 'yellow'))
+        printy('# MOTHER INFO ##################################################')
         get_db_info(vstup)
-        print(colored('# SWITCH INFO ##################################################', 'blue'))
+        printb('# SWITCH INFO ##################################################')
         print(vstup)
         #cmd = 'display current-configuration interface g1/0/' + str(vstup.port)
         cmd = 'display current-configuration interface bridge-aggregation ' + str(vstup.port)
@@ -135,11 +141,11 @@ def main():
             cmd2 = 'port access vlan ' + str(vstup.vlan)
             cmds.append(cmd2)
             set_sw_desc(vstup, cmds)
-            print(colored('################################################################', 'blue'))
+            printb('################################################################')
     else:
-        print(colored('# MOTHER INFO ##################################################', 'yellow'))
+        printy('# MOTHER INFO ##################################################')
         get_db_info(vstup)      
-        print(colored('################################################################', 'yellow'))
+        printy('################################################################')
 
 
 if __name__ == "__main__":

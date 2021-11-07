@@ -126,42 +126,6 @@ class Switch():
         self.device.disconnect()
 
 
-
-def get_input():
-    ''' Parser na vstupni parametry '''
-    # check input args
-    parser = argparse.ArgumentParser(description='Popis pouziti programu:')
-    # Required positional argument
-    parser.add_argument('switch', help='Switch hostname [AB13.TTC]')
-    # Required positional argument
-    parser.add_argument('port', type=int, help='Switch port [45]')
-    # Optional argument
-    parser.add_argument('--desc', nargs='?', help='Switch port description')
-    args = parser.parse_args()  
-    args.switch = str(args.switch).lower()
-    if DEBUG:
-        print(args)
-        print(args.switch)
-        print(args.port)
-        print(args.desc)
-    try:
-        sw.sw_dc = args.switch.split('.')[1]
-        sw.sw_name = args.switch.split('.')[0]
-    except IndexError as error:
-        print('Chybne zadany parametry sw !')
-    else:
-        if sw.sw_dc == 'ttc':
-            for c in range(len(switches_ttc)):
-                name = list(switches_ttc[c])[0]
-                if DEBUG:
-                    #print(f'name = {name}, swname = {sw.sw_name}')
-                    pass
-                if name == sw.sw_name:
-                    sw.sw_ip = switches_ttc[c][name]
-        sw.sw_port = args.port
-        sw.sw_desc = args.desc
-        print('-- Parametry nacteny')
-
 def test_smycka():
     """ testovani smycky pro pousteni prikazu na cele pole switches """
     #sw_count = len(switches_stl)
@@ -241,7 +205,7 @@ def show_config():
     sw = 'AB13.TTC'
     ip = '10.33.240.43'
     port = '43'
-    sw = Switch('',sw, ip, port)
+    sw = Switch('',ip, port)
     cmd = 'display current-configuration interface g1/0/' + str(port)
     sw.get_info(cmd)
     cmd = 'display current-configuration interface g2/0/' + str(port)

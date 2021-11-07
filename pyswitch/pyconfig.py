@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+# https://wiki.python.org/moin/ConfigParserExamples
+
 import configparser
 
 class Config():
 
     SETUP_FILE = 'settings.ini'
-    # https://wiki.python.org/moin/ConfigParserExamples
+    
     def __init__(self, source=''):
         self.source = source
 

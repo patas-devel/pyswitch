@@ -5,7 +5,7 @@
 # KDO: iceman
 # KDY: @ 10/2021
 
-import os
+import os, sys
 import pydb as db
 import argparse
 import pyswitch as sw
@@ -33,16 +33,21 @@ class Device():
 def get_input():
     ''' Parser na vstupni parametry '''
 
+    if len(sys.argv) < 2:
+        exit('Chyba: Musite zadat vstupni parametry. Pro blizsi informace zadete s parametrem -h.')
     # Required positional argument
     parser = argparse.ArgumentParser(description='Popis pouziti programu:')
     parser.add_argument('--info', nargs='?', help='Only show information from Mother [server_name]')
-    parser.add_argument('--server', nargs='?', help='Server hostname - [gmnXXXX]')
+    parser.add_argument('--server', help='Server hostname - [gmnXXXX]')
     parser.add_argument('--switch', nargs='?', help='Switch hostname - [AB13.TTC]')
     parser.add_argument('--port', nargs='?', type=int, help='Switch port - [45]')
     parser.add_argument('--vlan', nargs='?', type=int, help='Switch vlan - [1600]')
     # Optional argument
     parser.add_argument('--desc', nargs='?', help='Switch port description ["Server gmnXXXX"]')
-    args = parser.parse_args()  
+    if DEBUG:
+        args = parser.parse_args(['--info', 'bbbe1'])
+    else:
+        args = parser.parse_args()
     args.switch = str(args.switch).lower()
     if DEBUG:
         print(f'Vsechny vstupni parametry: {args}')
@@ -79,6 +84,7 @@ def get_db_info(vstup):
     except AttributeError as err:
         print(f'Server {server} pravdepodobne neexistuje!')
         print(f'---> Error: {err}')
+        exit(0)
     else:
         print(f'\
         \nSERVER:\t\t{srv.name}\nMODEL:\t\t{typ.name}\nQR CODE:\t{QR}\
@@ -109,7 +115,7 @@ def main():
     dev = Device()
     os.system('clear')
     print(colored('MYSWITCH v1.25', 'green'))
-    vstup = get_input() # vyhodnoceni vstupnich parametry
+    vstup = get_input() # vyhodnoceni vstupnich parametry    
     # info z motheru o serveru
     #dev.server = vstup.server
     #dev.switch = vstup.switch

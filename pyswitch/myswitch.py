@@ -33,19 +33,17 @@ class Device():
 def get_input():
     ''' Parser na vstupni parametry '''
 
-    if len(sys.argv) < 2:
-        exit('Chyba: Musite zadat vstupni parametry. Pro blizsi informace zadete s parametrem -h.')
+#    if len(sys.argv) < 2:
+#        exit('Chyba: Musite zadat vstupni parametry. Pro blizsi informace zadete s parametrem -h.')
     # Required positional argument
-    parser = argparse.ArgumentParser(description='Popis pouziti programu:')
-    parser.add_argument('--info', nargs='?', help='Only show information from Mother [server_name]')
-    parser.add_argument('--server', help='Server hostname - [gmnXXXX]')
+    parser = argparse.ArgumentParser(description='Popis pouziti scriptu:')
+    parser.add_argument('server', help='Server hostname - [gmnXXXX]')
     parser.add_argument('--switch', nargs='?', help='Switch hostname - [AB13.TTC]')
     parser.add_argument('--port', nargs='?', type=int, help='Switch port - [45]')
     parser.add_argument('--vlan', nargs='?', type=int, help='Switch vlan - [1600]')
-    # Optional argument
     parser.add_argument('--desc', nargs='?', help='Switch port description ["Server gmnXXXX"]')
     if DEBUG:
-        args = parser.parse_args(['--info', 'bbbe1'])
+        args = parser.parse_args(['--server', 'bbbe1'])
     else:
         args = parser.parse_args()
     args.switch = str(args.switch).lower()
@@ -55,10 +53,7 @@ def get_input():
 
 def get_db_info(vstup):
 
-    if vstup.info != None:
-        server = vstup.info
-    else:
-        server = vstup.server
+    server = vstup.server
     try: 
         srv = db.session.query(db.Machine).filter(db.Machine.name == server).first()
         subnet = db.session.query(db.Subnet).join(db.Interface).join(db.Machine).filter(db.Machine.name == server).first()
@@ -106,6 +101,12 @@ def printb(text):
 
 def printy(text):
     print(colored(text, 'yellow'))
+    
+def printg(text):
+    print(colored(text, 'green'))
+    
+def printr(text):
+    print(colored(text, 'green'))
 
 
 # MAIN
@@ -114,44 +115,36 @@ def main():
     DEBUG = False
     dev = Device()
     os.system('clear')
-    print(colored('MYSWITCH v1.25', 'green'))
-    vstup = get_input() # vyhodnoceni vstupnich parametry    
-    # info z motheru o serveru
-    #dev.server = vstup.server
-    #dev.switch = vstup.switch
-    #dev.port = vstup.port
-    #dev.desc = vstup.desc
+    printg('##################')
+    printg('# MYSWITCH v1.25 #')
+    printg('##################')
+    vstup = get_input() # vyhodnoceni vstupnich parametry
     if DEBUG:
-        #dev.show()
-        print(vstup.info)
-    if vstup.info == None:
-        printy('# MOTHER INFO ##################################################')
-        get_db_info(vstup)
+        print(vstup.server)
+    printy('# MOTHER INFO ##################################################')
+    get_db_info(vstup)
+    print(vstup)
+    #cmd = 'display current-configuration interface g1/0/' + str(vstup.port)
+    if vstup.switch != None and vstup.port != None and vstup.vlan != None:
         printb('# SWITCH INFO ##################################################')
-        print(vstup)
-        #cmd = 'display current-configuration interface g1/0/' + str(vstup.port)
         cmd = 'display current-configuration interface bridge-aggregation ' + str(vstup.port)
-        get_sw_info(vstup, cmd)
-        text = colored('\nMam nyni pokracovat konfiguraci portu (zmenu vlany) ? (ano | ne): ','red')
+        #get_sw_info(vstup, cmd)
+        text = printr('\nMam nyni pokracovat konfiguraci portu (zmenu vlany a zapsani nove description) ? (ano | ne): ')
         choice = input(text)
-        if choice.lower == 'ne':
-            exit(0) # koncim
+        if choice.lower() == 'ne':
+        #   print('Ukoncuji pripojeni.')
+           exit(0) # koncim
         else:
             cmds = []
-            # CHANGE DESC
-                #swdesc = 'description ' + vstup.desc
-                #cmds=['interface g1/0/26', swdesc ]
-                # CHANGE VLAN
+            # CHANGE VLAN + DESC
             cmd1 = 'interface bridge-aggregation ' + str(vstup.port)
             cmds.append(cmd1)
             cmd2 = 'port access vlan ' + str(vstup.vlan)
             cmds.append(cmd2)
+            cmd3 = 'description ' + vstup.desc
+            cmds.append(cmd3)
             set_sw_desc(vstup, cmds)
             printb('################################################################')
-    else:
-        printy('# MOTHER INFO ##################################################')
-        get_db_info(vstup)      
-        printy('################################################################')
 
 
 if __name__ == "__main__":

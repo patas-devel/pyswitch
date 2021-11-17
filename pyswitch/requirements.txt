@@ -1,7 +1,6 @@
 bcrypt==3.2.0
 cffi==1.15.0
 colorama==0.4.4
-colored==1.4.3
 cryptography==35.0.0
 future==0.18.2
 mysql-connector==2.2.9
@@ -18,5 +17,4 @@ scp==0.14.1
 six==1.16.0
 SQLAlchemy==1.4.27
 tenacity==8.0.1
-termcolor==1.1.0
 textfsm==1.1.2

@@ -1,0 +1,13 @@
+colored==1.4.3
+greenlet==1.1.2
+ipaddress==1.0.23
+mysql-connector==2.2.9
+netaddr==0.8.0
+protobuf==3.17.3
+pycairo==1.20.1
+PyGObject==3.40.1
+PyMySQL==1.0.2
+PyYAML==5.4.1
+SQLAlchemy==1.4.26
+termcolor==1.1.0
+youtube-dl==2021.6.6

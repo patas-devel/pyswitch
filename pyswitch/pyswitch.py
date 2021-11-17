@@ -88,7 +88,7 @@ class Switch():
         self.sw_connect()
         self.sw_out = self.device.send_command(cmd)
         print(f'{Fore.BLUE}{self.sw_out}{Style.RESET_ALL}')
-        self.sw_disconnect()
+#        self.sw_disconnect()
 
     def set_desc(self, cmd):
         self.sw_connect()
@@ -212,15 +212,6 @@ def show_config():
     cmd = 'display link-aggregation verbose Bridge-Aggregation' + str(port)
     sw.get_info(cmd)
     
-
-# MAIN
-#DEBUG = True
-#os.system('clear')
-
-#sw = Switch('','AB13.TTC', '10.33.240.43', '26')
-#sw.get_info('display interface brief')
-#sw.get_config()
-#show_config()
 #mac_find('0021-5ef0-adb4')
 #show_config('','')
 #mac_find('00215ef0adb4')

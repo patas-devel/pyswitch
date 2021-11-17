@@ -115,21 +115,27 @@ def main():
     DEBUG = False
     dev = Device()
     os.system('clear')
-    printg('##################')
-    printg('# MYSWITCH v1.25 #')
-    printg('##################')
+    printg('##################\n# MYSWITCH v1.25 #\n##################')
     vstup = get_input() # vyhodnoceni vstupnich parametry
     if DEBUG:
         print(vstup.server)
     printy('# MOTHER INFO ##################################################')
     get_db_info(vstup)
-    print(vstup)
+    print(f'DEBUG: Vstupni parametry - {vstup}')
     #cmd = 'display current-configuration interface g1/0/' + str(vstup.port)
     if vstup.switch != None and vstup.port != None and vstup.vlan != None:
         printb('# SWITCH INFO ##################################################')
-        cmd = 'display current-configuration interface bridge-aggregation ' + str(vstup.port)
-        #get_sw_info(vstup, cmd)
-        text = printr('\nMam nyni pokracovat konfiguraci portu (zmenu vlany a zapsani nove description) ? (ano | ne): ')
+        # VYPISE PORTY gi1,2, bridge port, mac adresu na portech
+        cmds_info = []
+        cmd1 = 'display current-configuration interface gi1/0/' + str(vstup.port)
+        cmd2 = 'display current-configuration interface gi2/0/' + str(vstup.port)
+        cmd3 = 'display current-configuration interface bridge-aggregation ' + str(vstup.port)
+        cmd4 = 'display mac-address interface Bridge-Aggregation ' + str(vstup.port)
+        cmds_info.extend([cmd1, cmd2, cmd3, cmd4])
+        for c in cmds_info:
+            get_sw_info(vstup, c)
+            # doresit disconnect ...
+        text = printr('\nMam nyni pokracovat ve zmene konfigurace portu switche (zmenim vlanu description) ? (ano | ne): ')
         choice = input(text)
         if choice.lower() == 'ne':
         #   print('Ukoncuji pripojeni.')

@@ -95,17 +95,6 @@ class Interface(Base):
     subnet_id = Column(Integer, ForeignKey('networking_subnet.id'), nullable=False)
     machine_id = Column(Integer, ForeignKey('machines_machine.id'), nullable=False)
     type = Column(VARCHAR(32))
-    mac = Column(VARCHAR(17)) 
-    is_primary = Column(Integer)
-    dhcp_options = Column(VARCHAR(256))
-    port = Column(Integer)
-
-class Subnet(Base):
-    __tablename__ = 'networking_subnet'
-    id = Column(Integer, primary_key=True)
-    ip = Column(DECIMAL(39,0))
-    vlan_id = Column(Integer)
-    prefix = Column(Integer)
     default_gw_mac = Column(VARCHAR(17))
     dhcp_template = Column(VARCHAR(128))
     notes = Column(VARCHAR(128)) 

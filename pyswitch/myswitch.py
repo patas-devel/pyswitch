@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# INFO: script na zobrazeni informaci ze switche a upraveni jeho configurace
-# KDO: iceman
-# KDY: @ 10/2021
+__author__ = "Iceman"
+__copyright__ = "Copyright 2021"
+__license__ = "GPL"
+__version__ = "1.2.5"
+
 
 import os, sys
 import pydb as db
@@ -85,7 +87,7 @@ def get_db_info(vstup):
         \nSERVER:\t\t{srv.name}\nMODEL:\t\t{typ.name}\nQR CODE:\t{QR}\
         \nRACK:\t\t{ra.name}\nSWITCH:\t\t{swi}\nPORT\t\t{int.port}\
         \nMAC ADDR:\t{int.mac}\nIP ADDR:\t{ipv} (primary)\
-        \nVLAN NAME:\t{vlan.name}\nVLAN NUM:\t{vlan.id_vlan}\n\
+        \nVLAN NAME:\t{vlan.name}\nVLAN:\t\t{vlan.id_vlan}\n\
         ')
 
 def get_sw_info(vstup, cmd):

@@ -13,4 +13,8 @@ from  mother.machines.models import Machine
 #print(Machine._meta.get_all_field_names())
 os.system('clear')
 
+# CREATE NEW OBJECT ~ SERVER
 m = Machine.objects.create(name='a-server6', serial_number='ABCEFGHIJK', project_id_id=1, inventory='testovaci6', cpu=4, ram=16, os='d10', HeliosID='123123', qr_code='12312346', type_id=132, state_id=1, site_id=1)
+
+# UPDATE RECORD ~ SERVER
+Machine.objects.filter(name='a-server5').update(os='d5')

@@ -59,7 +59,8 @@ def get_input():
     parser.add_argument('--vlan', nargs='?', type=int, help='Switch vlan - [1600]')
     parser.add_argument('--desc', nargs='?', help='Switch port description ["Server gmnXXXX"]')
     if DEBUG:
-        args = parser.parse_args(['--server', 'bbbe1'])
+        args = parser.parse_args('bbbe1')
+        print(args)
     else:
         args = parser.parse_args()
     args.switch = str(args.switch).lower()
@@ -67,7 +68,7 @@ def get_input():
         print(f'Vsechny vstupni parametry: {args}')
     return args
 
-def get_db_info(vstup):
+def mother_info(vstup):
     server = vstup.server
     printx('# MOTHER INFO ##################################################','y')
     try: 
@@ -127,8 +128,8 @@ def switch_info(vstup):
     for c in cmds_info:
         get_sw_info(vstup, c)
         # doresit disconnect ...
-        text = printx('\nMam nyni pokracovat ve zmene konfigurace portu switche (zmenim vlanu description) ? (ano | ne): ','r')
-        choice = input(text)
+    text = printx('\nMam nyni pokracovat ve zmene konfigurace portu switche (zmenim vlanu description) ? (ano | ne): ','r')
+    choice = input(text)
     if choice.lower() == 'ne':
         #   print('Ukoncuji pripojeni.')
         exit(0) # koncim
@@ -144,7 +145,7 @@ def switch_info(vstup):
         set_sw_desc(vstup, cmds)
         printx('################################################################','b')
  
-def vstup_info():
+def setup():
     global DEBUG
     DEBUG = False
     dev = Device()
@@ -153,11 +154,14 @@ def vstup_info():
 
 # MAIN
 def main():
-    vstup_info()
-    vstup = get_input() # vyhodnoceni vstupnich parametry
+    # Zakladni nastaveni
+    setup()
+    # Vyhodnoceni vstupnich parametry
+    vstup = get_input()
     if DEBUG:
-        print(vstup.server)  
-    get_db_info(vstup)
+        print(vstup.server)
+    # Informace z motheru o zadanem serveru
+    mother_info(vstup)
     print(f'DEBUG: Vstupni parametry - {vstup}')
     #cmd = 'display current-configuration interface g1/0/' + str(vstup.port)
     if vstup.switch != None and vstup.port != None and vstup.vlan != None:

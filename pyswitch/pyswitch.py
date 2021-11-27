@@ -85,7 +85,7 @@ class Switch():
         return f'DC: {self.sw_dc}, SWITCH: {self.sw_name}, IP: {self.sw_ip}, PORT: {self.sw_port}, DESC: {self.sw_desc}' 
 
     def get_info(self, cmd):
-        self.sw_connect()
+        #self.sw_connect()
         self.sw_out = self.device.send_command(cmd)
         print(f'{Fore.BLUE}{self.sw_out}{Style.RESET_ALL}')
 #        self.sw_disconnect()
@@ -96,14 +96,10 @@ class Switch():
         print(f'{Fore.BLUE}{self.sw_out}{Style.RESET_ALL}')
         self.sw_disconnect()
     
-    def get_config(self):
+    def get_config(self, cmd):
         self.sw_connect()
-        cmd = 'display current-configuration interface g1/0/' + str(self.sw_port)
-        self.get_info(cmd)
-        cmd = 'display current-configuration interface g2/0/' + str(self.sw_port)
-        self.get_info(cmd)
-        cmd = 'display link-aggregation verbose Bridge-Aggregation' + str(self.sw_port)
-        self.get_info(cmd)
+        for c in cmd:
+            self.get_info(c)
         self.sw_disconnect()
 
     def set_config_old(self, note):

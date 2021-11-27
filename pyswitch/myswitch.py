@@ -109,6 +109,10 @@ def get_sw_info(vstup, cmd):
     s = sw.Switch(vstup.switch, sw.switches[vstup.switch], vstup.port)
     s.get_info(cmd)
 
+def get_sw_config(vstup, cmd):
+    s = sw.Switch(vstup.switch, sw.switches[vstup.switch], vstup.port)
+    s.get_config(cmd)
+    
 def set_sw_desc(vstup, cmd):
     s = sw.Switch(vstup.switch, sw.switches[vstup.switch], vstup.port)
     s.set_desc(cmd)
@@ -125,9 +129,8 @@ def switch_info(vstup):
     cmd3 = 'display current-configuration interface bridge-aggregation ' + str(vstup.port)
     cmd4 = 'display mac-address interface Bridge-Aggregation ' + str(vstup.port)
     cmds_info.extend([cmd1, cmd2, cmd3, cmd4])
-    for c in cmds_info:
-        get_sw_info(vstup, c)
-        # doresit disconnect ...
+    get_sw_config(vstup, cmds_info)
+    # Varianta postupnych dotazu na konfiguraci
     text = printx('\nMam nyni pokracovat ve zmene konfigurace portu switche (zmenim vlanu description) ? (ano | ne): ','r')
     choice = input(text)
     if choice.lower() == 'ne':

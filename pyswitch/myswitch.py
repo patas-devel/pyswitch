@@ -3,7 +3,7 @@
 
 
 __app__ = 'MyAdmin'
-__version__ = "1.2.5"
+__version__ = "1.26"
 __author__ = "Iceman"
 __copyright__ = "Copyright 2021"
 __license__ = "GPL"
@@ -16,9 +16,14 @@ import argparse
 import pyswitch as sw
 from termcolor import colored
 import ipaddress
+import pyconfig as conf
+
+
+# VARS
+mother_prepro = '10.20.100.133'
+mother_prod = ''
 
 # CLASS
-
 class Device():
 
     def __init__(self, server='', switch='', port='', desc=''):
@@ -33,39 +38,40 @@ class Device():
     def show(self):
         print(f'INPUT: {self.server}, {self.switch}, {self.port}, {self.desc}')
 
-def printx(text, color):
-    if color == 'b':
-        color = 'blue'
-    elif color == 'y':
-        color = 'yellow'
-    elif color == 'g':
-        color = 'green'
-    elif color == 'r':
-        color = 'red'
+# FUNC
+def printx(text, c):
+    if c == 'b':
+        colour = 'blue'
+    elif c == 'y':
+        colour = 'yellow'
+    elif c == 'g':
+        colour = 'green'
+    elif c == 'r':
+        colour = 'red'
     else:
-        color = 'white'
-    print(colored(text, color))
+        colour = 'white'
+    print(colored(text, colour))
 
-def get_input():
+def get_input(test):
     ''' Parser na vstupni parametry '''
 
-#    if len(sys.argv) < 2:
-#        exit('Chyba: Musite zadat vstupni parametry. Pro blizsi informace zadete s parametrem -h.')
     # Required positional argument
     parser = argparse.ArgumentParser(description='Popis pouziti scriptu:')
     parser.add_argument('server', help='Server hostname - [gmnXXXX]')
+    # Optional
+    parser.add_argument('--update', nargs='?', help='Update mother parameters - ["inventory,hp134ndda"]')
     parser.add_argument('--switch', nargs='?', help='Switch hostname - [AB13.TTC]')
     parser.add_argument('--port', nargs='?', type=int, help='Switch port - [45]')
     parser.add_argument('--vlan', nargs='?', type=int, help='Switch vlan - [1600]')
     parser.add_argument('--desc', nargs='?', help='Switch port description ["Server gmnXXXX"]')
     if DEBUG:
-        args = parser.parse_args('bbbe1')
+        args = parser.parse_args(test)
         print(args)
     else:
         args = parser.parse_args()
     args.switch = str(args.switch).lower()
     if DEBUG:
-        print(f'Vsechny vstupni parametry: {args}')
+        print(f'Vsechny vstupni parametry: {args}\n')
     return args
 
 def mother_info(vstup):
@@ -105,6 +111,22 @@ def mother_info(vstup):
         \nVLAN NAME:\t{vlan.name}\nVLAN:\t\t{vlan.id_vlan}\n\
         ')
 
+def mother_update(vstup):
+    if DEBUG:
+        print(vstup)
+    print(vstup)
+    printx(f'\nMother updating parameters ...\n','y')
+    mother_server = '10.20.100.133'
+    mother_dir = '/root/mother/mother/machines/'
+    mother_script = 'mother_update.py'
+    sshinfo = 'ssh root@' + mother_server + ' ' + mother_dir + mother_script 
+    stype = vstup.update.split(',')[0]
+    value = vstup.update.split(',')[1]
+    cmd = sshinfo + ' ' + vstup.server + ' ' + stype + ' ' + value
+    if DEBUG:
+        print(f'SSH COMMAND: {cmd}')
+    runcmd(cmd)
+
 def get_sw_info(vstup, cmd):
     s = sw.Switch(vstup.switch, sw.switches[vstup.switch], vstup.port)
     s.get_info(cmd)
@@ -142,28 +164,29 @@ def switch_info(vstup):
         set_sw_desc(vstup, cmds)
         printx('################################################################','b')
  
-def setup():
+def init():
     global DEBUG
     DEBUG = False
     dev = Device()
     os.system('clear')
-    printx('# MYADMIN v1.25 #', 'g')
+    printx('# MYADMIN v1.26 #', 'g')
+    if DEBUG:
+        printx('DEBUGGING: ON','r')
 
 # MAIN
 def main():
-    # Zakladni nastaveni
-    setup()
+    # Zakladni nastaveni a debug on/off 
+    init()
     # Vyhodnoceni vstupnich parametry
-    vstup = get_input()
-    # nefunguje spravne !
-    if DEBUG:
-        print(vstup.server)
-    # Informace z motheru o zadanem serveru
-    mother_info(vstup)
-    print(f'DEBUG: Vstupni parametry - {vstup}')
-    #cmd = 'display current-configuration interface g1/0/' + str(vstup.port)
-    cmd = 'ssh root@10.20.100.133 /root/mother/mother/machines/server_update.py a-server4 ram 128'
-    print(runcmd(cmd))
+    test = ['a-server4', '--update', 'ram,16']
+    #test = ['bbbe1']
+    vstup = get_input(test)
+    # Informace o zadanem serveru z motheru
+    #mother_info(vstup)
+    # Aktualizace parametru serveru v motheru
+    if vstup.update != None:
+        mother_update(vstup)
+    # Informace o nastaveni switchi pro dany port
     #if vstup.switch != None and vstup.port != None and vstup.vlan != None:
     #    switch_info(vstup)
 

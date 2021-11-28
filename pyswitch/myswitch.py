@@ -109,9 +109,9 @@ def get_sw_info(vstup, cmd):
     s = sw.Switch(vstup.switch, sw.switches[vstup.switch], vstup.port)
     s.get_info(cmd)
 
-def get_sw_config(vstup, cmd):
+def get_sw_config(vstup):
     s = sw.Switch(vstup.switch, sw.switches[vstup.switch], vstup.port)
-    s.get_config(cmd)
+    s.get_config(vstup.port)
     
 def set_sw_desc(vstup, cmd):
     s = sw.Switch(vstup.switch, sw.switches[vstup.switch], vstup.port)
@@ -122,14 +122,8 @@ def runcmd(cmd):
 
 def switch_info(vstup):
     printx('# SWITCH INFO ##################################################','b')
-    # VYPISE PORTY gi1,2, bridge port, mac adresu na portech
-    cmds_info = []
-    cmd1 = 'display current-configuration interface gi1/0/' + str(vstup.port)
-    cmd2 = 'display current-configuration interface gi2/0/' + str(vstup.port)
-    cmd3 = 'display current-configuration interface bridge-aggregation ' + str(vstup.port)
-    cmd4 = 'display mac-address interface Bridge-Aggregation ' + str(vstup.port)
-    cmds_info.extend([cmd1, cmd2, cmd3, cmd4])
-    get_sw_config(vstup, cmds_info)
+    # dodat sw port, ktere overujeme
+    get_sw_config(vstup)
     # Varianta postupnych dotazu na konfiguraci
     text = printx('\nMam nyni pokracovat ve zmene konfigurace portu switche (zmenim vlanu description) ? (ano | ne): ','r')
     choice = input(text)
@@ -161,14 +155,17 @@ def main():
     setup()
     # Vyhodnoceni vstupnich parametry
     vstup = get_input()
+    # nefunguje spravne !
     if DEBUG:
         print(vstup.server)
     # Informace z motheru o zadanem serveru
     mother_info(vstup)
     print(f'DEBUG: Vstupni parametry - {vstup}')
     #cmd = 'display current-configuration interface g1/0/' + str(vstup.port)
-    if vstup.switch != None and vstup.port != None and vstup.vlan != None:
-        switch_info(vstup)
+    cmd = 'ssh root@10.20.100.133 /root/mother/mother/machines/server_update.py a-server4 ram 128'
+    print(runcmd(cmd))
+    #if vstup.switch != None and vstup.port != None and vstup.vlan != None:
+    #    switch_info(vstup)
 
 if __name__ == "__main__":
     main()

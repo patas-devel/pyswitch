@@ -55,6 +55,18 @@ switches = {
      'ab14.ttc': '10.33.240.44',
 }
 
+# without port
+def commands(port):
+    port = str(port)
+    cmd_config_check = [
+        'display current-configuration interface gi1/0/' + port, 
+        'display current-configuration interface gi2/0/' + port,
+        'display current-configuration interface bridge-aggregation ' + port,
+        'display mac-address interface Bridge-Aggregation ' + port
+    ]
+    return cmd_config_check
+
+
 # Login information
 setup = conf.Config('switch')
 swuser = setup.get_value('user')
@@ -96,9 +108,10 @@ class Switch():
         print(f'{Fore.BLUE}{self.sw_out}{Style.RESET_ALL}')
         self.sw_disconnect()
     
-    def get_config(self, cmd):
+    def get_config(self, port):
         self.sw_connect()
-        for c in cmd:
+        for c in commands(port):
+            #print(c)   
             self.get_info(c)
         self.sw_disconnect()
 

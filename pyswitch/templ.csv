@@ -1,0 +1,2 @@
+OK,NAME - CURRENT,NAME - NEW,Project id,Inventory,Type,State,Cpu,Ram,OS,Qr code,Purchase date,Serial number,Rack,Rack position,Maintainer,Notes,mgmt mac,mgmt port,mgmt subnet,eth mac,e1mac,e2 mac,e3 mac,eth subnet,e1 subnet,e2 subnet,e3 subnet,switch,port,vlan,desc,Machine1,Type,Data
+,Cold-dell740-01,gmn1234,None,12345,DELL-PER740xd-2U,cold spare,6,32,D10,1001010,2021-11-24,CKVG8K3,B06.STL,1,jiri_tomasek,pokus poznamka,3CECEFE727AC,15,1320,aabbccddeeff,aabbccddeef1,aabbccddeef2,aabbccddeef3,1318,,,,ab06.stl,15,1318,gmn1234,,,

@@ -10,7 +10,7 @@ __license__ = "GPL"
 
 
 from configparser import Error
-import os, time
+import os, time, sys
 import subprocess as sub
 import pydb as db
 import argparse
@@ -60,9 +60,9 @@ def get_input(test):
     parser = argparse.ArgumentParser(description='Popis pouziti utility:')
     parser.add_argument('server', help='Server hostname - [gmnXXXX]')
     # Optional
-    parser.add_argument('-i', nargs='?', help='Information about server - [mother | switch]')
-    parser.add_argument('-um', nargs='?', help='Update mother parameters - ["inventory,hp134ndda"]')
-    parser.add_argument('-us', nargs='?', help='Switch hostname, port, vlan, description - [AB13.TTC,45,1600,"Server gmnXXXX"]')
+    parser.add_argument('-i', nargs='?', help='Information about server - [mother or switch]')
+    parser.add_argument('-um', nargs='?', help='Update mother parameters - [cpu / ram / os / inventory / helios / qr / age / sn / port], usage: [cpu,8].')
+    parser.add_argument('-us', nargs='?', help='Update switch configuration\n[AB13.TTC,45,1600,"Server gmnXXXX"]')
     if DEBUG:
         args = parser.parse_args(test)
         print(args)
@@ -120,7 +120,6 @@ def mother_update(vstup):
     if DEBUG:
         print(vstup)
     print(vstup)
-    printx(f'\nMother updating parameters ...\n','y')
     mother_server = '10.20.100.133'
     mother_dir = '/root/mother/mother/machines/'
     mother_script = 'mother_update.py'
@@ -129,14 +128,18 @@ def mother_update(vstup):
         stype = vstup.um.split(',')[0]
         value = vstup.um.split(',')[1]
     except IndexError as err:
-        printx(f'Error: {err}','r')
+        if DEBUG:
+            printx(f'Error: {err}','r')
+        printx(f'Mother update: Spatne zadane parametry.','r')
         exit(0)
     else:
         cmd = sshinfo + ' ' + vstup.server + ' ' + stype + ' ' + value
         #print(cmd)
         if DEBUG:
             print(f'SSH COMMAND: {cmd}')
+        printx(f'\nMother updating parameters ...\n','y')
         runcmd(cmd)
+        
 
 def get_sw_info(vstup, cmd):
     s = sw.Switch(vstup.switch, sw.switches[vstup.switch], vstup.port)
@@ -153,7 +156,7 @@ def get_sw_config(vstup):
     else: 
         print(f'Zadano: {name}, {port}, {vlan}, {desc}')
         s = sw.Switch(name, sw.switches[name], port)
-        s.get_config(port)
+        s.get_config('config', port)
     
 def set_sw_desc(vstup, cmd):
     s = sw.Switch(vstup.switch, sw.switches[vstup.switch], vstup.port)
@@ -172,14 +175,14 @@ def switch_info(vstup):
     except Error as err:
         print(f'Error: {err}')
     else:
-        print(f'Zadano: {name}, {port}')
+        print(f'ZADANO - switch: {name}, port: {port}\n')
         ss = sw.Switch(name, sw.switches[name], port)
-        ss.get_config(port)
+        ss.get_config('config', port)
     
 def switch_update(vstup):
     printx('# SWITCH INFO ##################################################','b')
     # dodat sw port, ktere overujeme
-    get_sw_config(vstup)
+    get_sw_info(vstup)
     # Varianta postupnych dotazu na konfiguraci
     text = printx('\nMam nyni pokracovat ve zmene konfigurace portu switche (zmenim vlanu description) ? (ano | ne): ','r')
     choice = input(text)
@@ -219,20 +222,31 @@ def main():
     test = ['a-server4']
     vstup = get_input(test)
     # Informace o zadanem serveru z motheru
-    if vstup.i != None:
-        if vstup.i == 'mother':
-            mother_info(vstup)
-        elif vstup.i =='switch':
-            switch_info(vstup)
-    # Aktualizace parametru v motheru nebo zmena nastaveni switche (vlan, desc)
-    elif vstup.um != None:
-        mother_update(vstup)
-    elif vstup.us == None:
-#        switch_update(vstup)
-        pass
+    print(len(sys.argv))
+    if len(sys.argv) > 3:
+        if vstup.i != None:
+            if vstup.i == 'mother':
+                mother_info(vstup)
+            elif vstup.i =='switch':
+                switch_info(vstup)
+            else:
+                printx('Nezadan zdroj informaci ! Moznosti: mother, switch.','r')
+        # Aktualizace parametru v motheru nebo zmena nastaveni switche (vlan, desc)
+        elif vstup.um != None:
+            mother_update(vstup)
+        elif vstup.us == None:
+    #        switch_update(vstup)
+            pass
+        else:
+            printx('Chybne zadano, pravdepodobne jste nezadal vsechny pozadovane parametry!','r')
+        # Informace o nastaveni switchi pro dany port
     else:
-        printx('Chybne zadano, pravdepodobne jste nezadal vsechny pozadovane parametry!','r')
-    # Informace o nastaveni switchi pro dany port
+        printx('Nutne zadat vsechny parametry nebo pouzijte paremeter: -h pro help.','r')
 
 if __name__ == "__main__":
     main()
+    
+# TODO
+# jinak resit debug mode - ne ten test parametr
+# import csv pro update mother - dalsi polozku ?
+# 

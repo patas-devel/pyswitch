@@ -56,15 +56,23 @@ switches = {
 }
 
 # without port
-def commands(port):
+def commands(cmd, port):
     port = str(port)
-    cmd_config_check = [
-        'display current-configuration interface gi1/0/' + port, 
-        'display current-configuration interface gi2/0/' + port,
-        'display current-configuration interface bridge-aggregation ' + port,
-        'display mac-address interface Bridge-Aggregation ' + port
-    ]
-    return cmd_config_check
+    if cmd == 'config':
+        check_sw_config = [
+            'display current-configuration interface gi1/0/' + port, 
+            'display current-configuration interface gi2/0/' + port,
+            'display current-configuration interface bridge-aggregation ' + port,
+            'display mac-address interface Bridge-Aggregation ' + port,
+            'display link-aggregation verbose Bridge-Aggregation ' + port
+        ]
+        return check_sw_config
+    elif cmd == 'port':
+        check_sw_port = [
+            'display interface brief | incl GE1/0/' + port,
+            'display interface brief | incl GE2/0/' + port
+        ]
+        return check_sw_port
 
 
 # Login information
@@ -108,9 +116,9 @@ class Switch():
         print(f'{Fore.BLUE}{self.sw_out}{Style.RESET_ALL}')
         self.sw_disconnect()
     
-    def get_config(self, port):
+    def get_config(self, cmd, port):
         self.sw_connect()
-        for c in commands(port):
+        for c in commands(cmd, port):
             #print(c)   
             self.get_info(c)
         self.sw_disconnect()

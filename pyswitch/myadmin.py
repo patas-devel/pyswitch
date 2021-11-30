@@ -9,6 +9,7 @@ __copyright__ = "Copyright 2021"
 __license__ = "GPL"
 
 
+import csv
 from configparser import Error
 import os, time, sys
 import subprocess as sub
@@ -53,6 +54,37 @@ def printx(text, c):
         colour = 'white'
     print(colored(text, colour))
 
+def importer(csv_file):
+    # prevedeni csv file do dictionary
+    dict = {}
+    with open(csv_file) as f:
+        reader = csv.reader(f)
+        dict = {rows[0]:rows[1] for rows in reader}
+    d = Dict2class(dict)
+    #d.State = 'prod'
+    # loop na objects in dict
+    for attr, value in d.__dict__.items():
+        #print(f'{attr},{value}')
+        data = d.name + ',' + attr + ',' + value
+        mother_update_automatic(data)
+        #if attr == 'os':
+        #    data = attr + ',' + value
+    
+    
+class Dict2class(object):
+    """
+    Turns a dictionary into a class
+    """
+    def __init__(self, dictionary):
+        """Constructor"""
+        for key in dictionary:
+            setattr(self, key, dictionary[key])
+    
+    def __repr__(self):
+#        return "<dict2obj: %s="">" % self.__dict__
+        attrs = str([x for x in dir(self) if "__" not in x])
+        return "<dict2obj: %s="">" % attrs
+
 def get_input(test):
     ''' Parser na vstupni parametry '''
 
@@ -63,6 +95,7 @@ def get_input(test):
     parser.add_argument('-i', nargs='?', help='Information about server - [mother or switch]')
     parser.add_argument('-um', nargs='?', help='Update mother parameters - [cpu / ram / os / inventory / helios / qr / age / sn / port], usage: [cpu,8].')
     parser.add_argument('-us', nargs='?', help='Update switch configuration\n[AB13.TTC,45,1600,"Server gmnXXXX"]')
+    parser.add_argument('-f', nargs='?', help='Import csv file with information about new server - [file_name]')
     if DEBUG:
         args = parser.parse_args(test)
         print(args)
@@ -116,14 +149,14 @@ def mother_info(vstup):
         info = swi + ',' + str(int.port)
         return info
 
-def mother_update(vstup):
+def mother_update_manual(vstup):
     if DEBUG:
         print(vstup)
     print(vstup)
-    mother_server = '10.20.100.133'
+    mother_server = 'ssh@10.20.100.133'
     mother_dir = '/root/mother/mother/machines/'
     mother_script = 'mother_update.py'
-    sshinfo = 'ssh root@' + mother_server + ' ' + mother_dir + mother_script 
+    ssh = mother_server + ' ' + mother_dir + mother_script 
     try:
         stype = vstup.um.split(',')[0]
         value = vstup.um.split(',')[1]
@@ -133,13 +166,37 @@ def mother_update(vstup):
         printx(f'Mother update: Spatne zadane parametry.','r')
         exit(0)
     else:
-        cmd = sshinfo + ' ' + vstup.server + ' ' + stype + ' ' + value
+        cmd = ssh + ' ' + vstup.server + ' ' + stype + ' ' + value
         #print(cmd)
         if DEBUG:
             print(f'SSH COMMAND: {cmd}')
         printx(f'\nMother updating parameters ...\n','y')
-        runcmd(cmd)
+        #runcmd(cmd)
         
+def mother_update_automatic(data):
+    if DEBUG:
+        print(data)
+    print(data)
+    mother_server = 'ssh@10.20.100.133'
+    mother_dir = '/root/mother/mother/machines/'
+    mother_script = 'mother_update.py'
+    ssh = mother_server + ' ' + mother_dir + mother_script 
+    try:
+        server = data.split(',')[0] 
+        stype = data.split(',')[1]
+        value = data.split(',')[2]
+    except IndexError as err:
+        if DEBUG:
+            printx(f'Error: {err}','r')
+        printx(f'Mother update: Spatne zadane parametry.','r')
+        exit(0)
+    else:
+        cmd = ssh + ' ' + server + ' ' + stype + ' ' + value
+        print(cmd)
+        if DEBUG:
+            print(f'SSH COMMAND: {cmd}')
+        printx(f'\nMother updating parameters ...\n','y')
+        #runcmd(cmd)       
 
 def get_sw_info(vstup, cmd):
     s = sw.Switch(vstup.switch, sw.switches[vstup.switch], vstup.port)
@@ -180,7 +237,7 @@ def switch_info(vstup):
         ss.get_config('config', port)
     
 def switch_update(vstup):
-    printx('# SWITCH INFO ##################################################','b')
+    printx('# SWITCH UPDATE ##################################################','b')
     # dodat sw port, ktere overujeme
     get_sw_info(vstup)
     # Varianta postupnych dotazu na konfiguraci
@@ -200,7 +257,7 @@ def switch_update(vstup):
         cmds.append(cmd3)
         set_sw_desc(vstup, cmds)
         printx('################################################################','b')
- 
+        printx('################################################################','b') 
 def init():
     global DEBUG
     DEBUG = False
@@ -222,7 +279,7 @@ def main():
     test = ['a-server4']
     vstup = get_input(test)
     # Informace o zadanem serveru z motheru
-    print(len(sys.argv))
+    #print(len(sys.argv))
     if len(sys.argv) > 3:
         if vstup.i != None:
             if vstup.i == 'mother':
@@ -233,10 +290,12 @@ def main():
                 printx('Nezadan zdroj informaci ! Moznosti: mother, switch.','r')
         # Aktualizace parametru v motheru nebo zmena nastaveni switche (vlan, desc)
         elif vstup.um != None:
-            mother_update(vstup)
-        elif vstup.us == None:
+            mother_update_manual(vstup)
+        elif vstup.us != None:
     #        switch_update(vstup)
             pass
+        elif vstup.f != None:
+            importer(vstup.f)
         else:
             printx('Chybne zadano, pravdepodobne jste nezadal vsechny pozadovane parametry!','r')
         # Informace o nastaveni switchi pro dany port

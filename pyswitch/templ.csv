@@ -1,2 +1,36 @@
-OK,NAME - CURRENT,NAME - NEW,Project id,Inventory,Type,State,Cpu,Ram,OS,Qr code,Purchase date,Serial number,Rack,Rack position,Maintainer,Notes,mgmt mac,mgmt port,mgmt subnet,eth mac,e1mac,e2 mac,e3 mac,eth subnet,e1 subnet,e2 subnet,e3 subnet,switch,port,vlan,desc,Machine1,Type,Data
-,Cold-dell740-01,gmn1234,None,12345,DELL-PER740xd-2U,cold spare,6,32,D10,1001010,2021-11-24,CKVG8K3,B06.STL,1,jiri_tomasek,pokus poznamka,3CECEFE727AC,15,1320,aabbccddeeff,aabbccddeef1,aabbccddeef2,aabbccddeef3,1318,,,,ab06.stl,15,1318,gmn1234,,,
+name_current,Cold-dell740-01,"docasne jmeno, nespravne"
+name,gmn1234,"finalni jmeno, spravne"
+project_id,None,
+server_type,DELL-PER740xd-2U,
+inventory,876543,
+state,cold spare,
+cpu,6,
+ram,32,
+os,D10,
+qr_code,123456,
+purchase_date,2021-11-04,
+serial_number,E357376X1A02298H,
+rack,B13.ttc,
+rack_position,3,
+maintainer,jiri_tomasek,
+notes,default pwd,
+mgmt_mac,3CECEFE727AC,
+mgmt_port,15,slo by ziskat ze sw po pripojeni ...
+mgmt_vlan,1320,"sitel 1318, ttc 1218"
+eth,aabbccddeeff,"primary, mac"
+e1,aabbccddeef1,mac
+e2,aabbccddeef2,
+e3,aabbccddeef3,
+machinegroups,gigamail CZ (Product group),
+nagios_system,"gm-cache, gm-storage",
+machine1,microcloud chassi 24,
+type,node,
+Data,8,?
+eth subnet,1318,
+e1 subnet,,
+e2 subnet,,
+e3 subnet,,
+switch,ab13.ttc,
+port,15,
+vlan,auto,
+desc,auto hostname,

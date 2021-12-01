@@ -176,7 +176,20 @@ def mother_update_manual(vstup):
 def mother_update_automatic(data):
     if DEBUG:
         print(data)
-    print(data)
+#    print(data)
+    server = data.split(',')[0]
+    stype = data.split(',')[1]
+    svalue = data.split(',')[2]
+    print(f'{stype},{svalue}')
+    if stype == 'server_type':
+        srv = db.session.query(db.Type).filter(db.Type.name == svalue).first()
+        print(f'server-type: {srv.id}')
+    if stype == 'state_id':
+        srv = db.session.query(db.State).filter(db.State.name == svalue).first()
+        print(f'state_id: {srv.id}')
+    if stype == 'rack_id':
+        srv = db.session.query(db.Rack).filter(db.Rack.name == svalue).first()
+        print(f'rack_id: {srv.id}')
     mother_server = 'ssh@10.20.100.133'
     mother_dir = '/root/mother/mother/machines/'
     mother_script = 'mother_update.py'
@@ -192,10 +205,10 @@ def mother_update_automatic(data):
         exit(0)
     else:
         cmd = ssh + ' ' + server + ' ' + stype + ' ' + value
-        print(cmd)
+        #print(cmd)
         if DEBUG:
             print(f'SSH COMMAND: {cmd}')
-        printx(f'\nMother updating parameters ...\n','y')
+        #printx(f'\nMother updating parameters ...\n','y')
         #runcmd(cmd)       
 
 def get_sw_info(vstup, cmd):

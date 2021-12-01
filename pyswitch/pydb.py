@@ -89,6 +89,11 @@ class Type(Base):
     power_drain_max = Column(Integer) 
     color = Column(VARCHAR(32))
 
+class State(Base):
+    __tablename__ = 'machines_machinestate'
+    id = Column(Integer, primary_key=True)
+    name = Column(VARCHAR(128))  
+    
 class Rack(Base):
     __tablename__ = 'machines_rack'
     id = Column(Integer, primary_key=True)

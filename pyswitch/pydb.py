@@ -3,7 +3,7 @@
 
 import os, sys
 from typing import Counter, NewType
-from sqlalchemy import Date, Column, ForeignKey, Integer, String, func, text
+from sqlalchemy import Date, Column, ForeignKey, Integer, String, func, text, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import interfaces, relationship
 from sqlalchemy import create_engine
@@ -41,6 +41,19 @@ class Domain(Base):
     master = Column(VARCHAR(128))
     last_check = Column(Integer)
     account = Column(VARCHAR(40))
+
+class User(Base):
+    __tablename__ = 'auth_user'
+    id = Column(Integer, primary_key=True) 
+    username = Column(VARCHAR(30))
+    first_name = Column(VARCHAR(30))
+    last_name = Column(VARCHAR(30))
+    email = Column(VARCHAR(75))
+    password = Column(VARCHAR(128))
+    is_staff = Column(Integer)
+    is_superuser = Column(Integer)
+    last_login = Column(DateTime)
+    date_joined = Column(DateTime)
 
 class Record(Base):
     __tablename__ = 'records'
@@ -88,6 +101,11 @@ class Type(Base):
     power_drain_avg = Column(Integer)
     power_drain_max = Column(Integer) 
     color = Column(VARCHAR(32))
+
+class Project(Base):
+    __tablename__ = 'machines_machineproject'
+    id = Column(Integer, primary_key=True)
+    name = Column(VARCHAR(128))  
 
 class State(Base):
     __tablename__ = 'machines_machinestate'

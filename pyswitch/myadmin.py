@@ -216,12 +216,11 @@ def mother_update_auto(data):
     #print(f'{server},{stype},{svalue}')
     mother_script = '/root/mother/mother/machines/machine_update.py'
     net_list = ['mgmt', 'eth', 'e1', 'e2', 'e3']
-    if stype == 'name' or '#' in data:
+    if '#' in data:
         pass
     else:
         if stype == 'name':
-        #print(data)
-            svalue = data.split(',')[2]
+            print(svalue)
         elif stype == 'project_id':
             srv = db.session.query(db.Project).filter(db.Project.name == svalue).first()
             #print(f'project_id: {srv.id}')
@@ -242,6 +241,8 @@ def mother_update_auto(data):
             obj = db.session.query(db.User).filter(db.User.username == svalue).first()
             #print(f'user_id: {obj.id}')
             svalue = obj.id
+            # test
+            #svalue = 55
         elif stype =='notes':
             msg = svalue
             message_bytes = msg.encode('ascii')

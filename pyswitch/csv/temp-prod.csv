@@ -13,10 +13,10 @@ server,Cold-dell740-35,Cold-dell740-15,Cold-dell740-32,Cold-dell740-40,Cold-dell
 #rack_position,25,27,29,31,33,25,27,29,31,33
 #maintainer,jiri_tomasek,jiri_tomasek,jiri_tomasek,jiri_tomasek,jiri_tomasek,jiri_tomasek,jiri_tomasek,jiri_tomasek,jiri_tomasek,jiri_tomasek
 #switch_port,2,3,4,5,6,41,42,43,44,45
-notes,asdfdsf,,,,,,,,,
+#notes,asdfdsf,,,,,,,,,
 #machinegroups,gigamail CZ (Product group),gigamail CZ (Product group),gigamail CZ (Product group),gigamail CZ (Product group),gigamail CZ (Product group),gigamail CZ (Product group),gigamail CZ (Product group),gigamail CZ (Product group),gigamail CZ (Product group),gigamail CZ (Product group)
 #nagios_system,"gm-cache, gm-storage","gm-cache, gm-storage","gm-cache, gm-storage","gm-cache, gm-storage","gm-cache, gm-storage","gm-cache, gm-storage","gm-cache, gm-storage","gm-cache, gm-storage","gm-cache, gm-storage","gm-cache, gm-storage"
-#name,gmn1003,gmn1011,gmn1021,gmn1027,gmn1029,gmn1031,gmn1045,gmn1065,gmn1081,gmn1099
+name,gmn1003,gmn1011,gmn1021,gmn1027,gmn1029,gmn1031,gmn1045,gmn1065,gmn1081,gmn1099
 
 #mgmt,b0:7b:25:f7:04:a2-2,b0:7b:25:f4:6a:24;3,b0:7b:25:f7:04:0c;4,b0:7b:25:f7:04:84;5,b0:7b:25:f9:a2:b4;6,b0:7b:25:f4:82:e4;41,b0:7b:25:f4:4e:28;42,b0:7b:25:f7:04:cc;43,b0:7b:25:f7:04:90;44,b0:7b:25:f7:04:60;45
 #eth,34:73:5A:9F:DE:6C-2,34:73:5A:9F:D6:BC,34:73:5A:9F:DE:64,34:73:5A:9E:D2:F8,34:73:5A:9F:D9:FC,34:73:5A:9F:43:80,34:73:5A:A0:0B:18,34:73:5A:9E:E2:80,34:73:5A:A0:0D:B8,34:73:5A:A0:48:BC

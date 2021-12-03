@@ -272,7 +272,7 @@ def mother_update_auto(data):
         mother_prepro_ssh = 'ssh root@10.20.100.133 ' + mother_script
         cmd = mother_prepro_ssh + ' ' + str(server) + ' ' + str(stype) + ' ' + str(svalue)
         print(cmd)
-        #runcmd(cmd)
+        runcmd(cmd)
 
 
 def get_sw_info(vstup, cmd):
@@ -297,7 +297,14 @@ def set_sw_desc(vstup, cmd):
     s.set_desc(cmd)
 
 def runcmd(cmd):
-    return sub.getoutput(cmd)
+    #return sub.getoutput(cmd)
+    ssh_cmd = cmd
+    process = sub.Popen(ssh_cmd, shell=True,
+            stdout=sub.PIPE, stderr=sub.STDOUT)
+    output,stderr = process.communicate()
+    status = process.poll()
+    out = output.decode('utf-8').split('.')[0] # item from list
+    print(f'{status}, {out}')
 
 
 def switch_info(vstup):

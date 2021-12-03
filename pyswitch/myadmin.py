@@ -3,16 +3,19 @@
 
 
 __app__ = 'MyAdmin'
-__version__ = "1.26"
+__version__ = "1.29"
 __author__ = "Iceman"
 __copyright__ = "Copyright 2021"
 __license__ = "GPL"
 
 
-import csv
+import csv, base64
+import pandas as pd
 from configparser import Error
 import os, time, sys
 import subprocess as sub
+
+from pandas._libs.missing import NA
 import pydb as db
 import argparse
 import pyswitch as sw
@@ -54,47 +57,77 @@ def printx(text, c):
         colour = 'white'
     print(colored(text, colour))
 
+#def importer_test(csv_file):
+#    # prevedeni csv file do dictionary
+#    dict = {}
+#    with open(csv_file) as f:
+#        reader = csv.reader(f)
+#        dict = {rows[0]:rows[1] for rows in reader}
+#    d = Dict2class(dict)
+#    #d.State = 'prod'
+#    # loop na objects in dict
+#    for attr, value in d.__dict__.items():
+#        #print(f'{attr},{value}')
+#        data = d.name + ',' + attr + ',' + value
+#        if '#' in data:
+#            pass
+#        else:
+#            mother_update_auto(data)
+#        #if attr == 'os':
+#        #    data = attr + ',' + value
+    
 def importer(csv_file):
-    # prevedeni csv file do dictionary
-    dict = {}
-    with open(csv_file) as f:
-        reader = csv.reader(f)
-        dict = {rows[0]:rows[1] for rows in reader}
-    d = Dict2class(dict)
-    #d.State = 'prod'
-    # loop na objects in dict
-    for attr, value in d.__dict__.items():
-        #print(f'{attr},{value}')
-        data = d.name + ',' + attr + ',' + value
-        mother_update_automatic(data)
-        #if attr == 'os':
-        #    data = attr + ',' + value
+    data = pd.read_csv(csv_file)
+    #print(data)
+#    df = pd.DataFrame(data, columns=['mother','Cold-dell740-35']) 
+    df = pd.DataFrame(data)
+    #print (df)
+    #header = df.set_index['name-mother']
+    first_col = df.columns[0]
+    # vyber serveru pro zpracovani 1.server = 1:2, 2.server = 2:3, atd.
+    for sl in df.columns[1:2]:
+#        print(f'server: {sl}')
+        for i in df.index:
+            server = sl
+            stype = df.loc[i, first_col]
+            svalue = df.loc[i, sl]
+            #print(type(svalue))
+            # kontrola na prazdne hodnoty u stringu != nan ...
+            if svalue == None or svalue != svalue or '#' in stype:
+                #print('PASS - not value!')
+                continue
+            else:
+                data = server + ',' + str(stype) + ',' + str(svalue)
+                #print(data)
+            mother_update_auto(data)
     
-    
-class Dict2class(object):
-    """
-    Turns a dictionary into a class
-    """
-    def __init__(self, dictionary):
-        """Constructor"""
-        for key in dictionary:
-            setattr(self, key, dictionary[key])
-    
-    def __repr__(self):
-#        return "<dict2obj: %s="">" % self.__dict__
-        attrs = str([x for x in dir(self) if "__" not in x])
-        return "<dict2obj: %s="">" % attrs
+
+#class Dict2class(object):
+#    """
+#    Turns a dictionary into a class
+#    """
+#    def __init__(self, dictionary):
+#        """Constructor"""
+#        for key in dictionary:
+#            setattr(self, key, dictionary[key])
+#    
+#    def __repr__(self):
+##        return "<dict2obj: %s="">" % self.__dict__
+#        attrs = str([x for x in dir(self) if "__" not in x])
+#        return "<dict2obj: %s="">" % attrs
+
 
 def get_input(test):
     ''' Parser na vstupni parametry '''
 
     # Required positional argument
     parser = argparse.ArgumentParser(description='Popis pouziti utility:')
-    parser.add_argument('server', help='Server hostname - [gmnXXXX]')
+    parser.add_argument('server', nargs='?', help='Server hostname - [gmnXXXX]')
     # Optional
     parser.add_argument('-i', nargs='?', help='Information about server - [mother or switch]')
     parser.add_argument('-um', nargs='?', help='Update mother parameters - [cpu / ram / os / inventory / helios / qr / age / sn / port], usage: [cpu,8].')
     parser.add_argument('-us', nargs='?', help='Update switch configuration\n[AB13.TTC,45,1600,"Server gmnXXXX"]')
+    parser.add_argument('-ua', nargs='?', help='Automatic update switch configuration\n[gmnXXXX"]')
     parser.add_argument('-f', nargs='?', help='Import csv file with information about new server - [file_name]')
     if DEBUG:
         args = parser.parse_args(test)
@@ -153,9 +186,9 @@ def mother_update_manual(vstup):
     if DEBUG:
         print(vstup)
     print(vstup)
-    mother_server = 'ssh@10.20.100.133'
+    mother_server = 'ssh root@10.20.100.133'
     mother_dir = '/root/mother/mother/machines/'
-    mother_script = 'mother_update.py'
+    mother_script = 'machine_update.py'
     ssh = mother_server + ' ' + mother_dir + mother_script 
     try:
         stype = vstup.um.split(',')[0]
@@ -173,43 +206,73 @@ def mother_update_manual(vstup):
         printx(f'\nMother updating parameters ...\n','y')
         #runcmd(cmd)
         
-def mother_update_automatic(data):
+def mother_update_auto(data):
     if DEBUG:
         print(data)
-#    print(data)
+    #print(data)
     server = data.split(',')[0]
     stype = data.split(',')[1]
     svalue = data.split(',')[2]
-    print(f'{stype},{svalue}')
-    if stype == 'server_type':
-        srv = db.session.query(db.Type).filter(db.Type.name == svalue).first()
-        print(f'server-type: {srv.id}')
-    if stype == 'state_id':
-        srv = db.session.query(db.State).filter(db.State.name == svalue).first()
-        print(f'state_id: {srv.id}')
-    if stype == 'rack_id':
-        srv = db.session.query(db.Rack).filter(db.Rack.name == svalue).first()
-        print(f'rack_id: {srv.id}')
-    mother_server = 'ssh@10.20.100.133'
-    mother_dir = '/root/mother/mother/machines/'
-    mother_script = 'mother_update.py'
-    ssh = mother_server + ' ' + mother_dir + mother_script 
-    try:
-        server = data.split(',')[0] 
-        stype = data.split(',')[1]
-        value = data.split(',')[2]
-    except IndexError as err:
-        if DEBUG:
-            printx(f'Error: {err}','r')
-        printx(f'Mother update: Spatne zadane parametry.','r')
-        exit(0)
+    #print(f'{server},{stype},{svalue}')
+    mother_script = '/root/mother/mother/machines/machine_update.py'
+    net_list = ['mgmt', 'eth', 'e1', 'e2', 'e3']
+    if stype == 'name' or '#' in data:
+        pass
     else:
-        cmd = ssh + ' ' + server + ' ' + stype + ' ' + value
-        #print(cmd)
-        if DEBUG:
-            print(f'SSH COMMAND: {cmd}')
-        #printx(f'\nMother updating parameters ...\n','y')
-        #runcmd(cmd)       
+        if stype == 'name':
+        #print(data)
+            svalue = data.split(',')[2]
+        elif stype == 'project_id':
+            srv = db.session.query(db.Project).filter(db.Project.name == svalue).first()
+            #print(f'project_id: {srv.id}')
+            svalue = srv.id
+        elif stype == 'type':
+            srv = db.session.query(db.Type).filter(db.Type.name == svalue).first()
+            #print(f'server-type: {srv.id}')
+            svalue = srv.id
+        elif stype == 'state':
+            srv = db.session.query(db.State).filter(db.State.name == svalue).first()
+            #print(f'state_id: {srv.id}')
+            svalue = srv.id
+        elif stype == 'rack':
+            srv = db.session.query(db.Rack).filter(db.Rack.name == svalue).first()
+            #print(f'rack_id: {srv.id}')
+            svalue = srv.id
+        elif stype == 'maintainer':
+            obj = db.session.query(db.User).filter(db.User.username == svalue).first()
+            #print(f'user_id: {obj.id}')
+            svalue = obj.id
+        elif stype =='notes':
+            msg = svalue
+            message_bytes = msg.encode('ascii')
+            msg_enc = base64.b64encode(message_bytes)
+            msg_out = msg_enc.decode('ascii')
+            svalue = msg_out
+            #print(f'Encode: {svalue}')
+            #base64_message = svalue
+            #base64_bytes = base64_message.encode('ascii')
+            #message_bytes = base64.b64decode(base64_bytes)
+            #message = message_bytes.decode('ascii')
+            #print(f'Decode: {message}')
+        elif stype == 'machinegroups':
+            srv = db.session.query(db.Machine).filter(db.Machine.name == server).first()
+            mg = db.session.query(db.MachineGroup).filter(db.MachineGroup.machine_id == srv.id).first()
+            obj = db.session.query(db.Group).filter(db.Group.id == mg.machinegroup_id).first()
+            #print(obj.id)
+            svalue = obj.id
+        elif stype in net_list:
+            srv = db.session.query(db.Machine).filter(db.Machine.name == server).first()
+            #server = srv.id # a-server5
+            server = 2275
+            svalue = svalue.lower().replace(':','')
+            mother_script = '/root/mother/mother/networking/interfaces_update.py'
+        else:
+            pass
+        mother_prepro_ssh = 'ssh root@10.20.100.133 ' + mother_script
+        cmd = mother_prepro_ssh + ' ' + str(server) + ' ' + str(stype) + ' ' + str(svalue)
+        print(cmd)
+        #runcmd(cmd)
+
 
 def get_sw_info(vstup, cmd):
     s = sw.Switch(vstup.switch, sw.switches[vstup.switch], vstup.port)
@@ -235,6 +298,7 @@ def set_sw_desc(vstup, cmd):
 def runcmd(cmd):
     return sub.getoutput(cmd)
 
+
 def switch_info(vstup):
     # nactu parametry z motheru
     info = mother_info(vstup)
@@ -249,7 +313,7 @@ def switch_info(vstup):
         ss = sw.Switch(name, sw.switches[name], port)
         ss.get_config('config', port)
     
-def switch_update(vstup):
+def switch_update_manual(vstup):
     printx('# SWITCH UPDATE ##################################################','b')
     # dodat sw port, ktere overujeme
     get_sw_info(vstup)
@@ -270,13 +334,41 @@ def switch_update(vstup):
         cmds.append(cmd3)
         set_sw_desc(vstup, cmds)
         printx('################################################################','b')
-        printx('################################################################','b') 
+
+
+def switch_update_auto(vstup):
+    data = mother_info()
+    switch = data.split(',')[0]
+    port = data.split(',')[1]
+    print(f'{switch}, {port}')
+    exit(0)
+    printx('# SWITCH UPDATE ##################################################','b')
+    # dodat sw port, ktere overujeme
+    get_sw_info(vstup)
+    # Varianta postupnych dotazu na konfiguraci
+    text = printx('\nMam nyni pokracovat ve zmene konfigurace portu switche (zmenim vlanu description) ? (ano | ne): ','r')
+    choice = input(text)
+    if choice.lower() == 'ne':
+        #   print('Ukoncuji pripojeni.')
+        exit(0) # koncim
+    else:
+        cmds = []
+        # CHANGE VLAN + DESC
+        cmd1 = 'interface bridge-aggregation ' + str(vstup.port)
+        cmds.append(cmd1)
+        cmd2 = 'port access vlan ' + str(vstup.vlan)
+        cmds.append(cmd2)
+        cmd3 = 'description ' + vstup.desc
+        cmds.append(cmd3)
+        set_sw_desc(vstup, cmds)
+        printx('################################################################','b')
+        
 def init():
     global DEBUG
     DEBUG = False
 #    dev = Device()
     os.system('clear')
-    printx('# MYADMIN v1.26 #', 'g')
+    printx(f'# MYADMIN {__version__} #', 'g')
     if DEBUG:
         printx('DEBUGGING: ON','r')
 
@@ -285,15 +377,11 @@ def main():
     # Zakladni nastaveni a debug on/off 
     init()
     # Vyhodnoceni vstupnich parametry
-    #test = ['a-server4', '--update', 'ram,16']
-    #test = ['bbbe1', '--info', 'mother']
-    #test = ['bbbe1', '--switch', 'ab13.ttc,25,1600,"gmnXXXX"']
-    #test = ['a-server4', '-i', 'mother']
     test = ['a-server4']
     vstup = get_input(test)
     # Informace o zadanem serveru z motheru
     #print(len(sys.argv))
-    if len(sys.argv) > 3:
+    if len(sys.argv) > 2:
         if vstup.i != None:
             if vstup.i == 'mother':
                 mother_info(vstup)
@@ -305,8 +393,10 @@ def main():
         elif vstup.um != None:
             mother_update_manual(vstup)
         elif vstup.us != None:
-    #        switch_update(vstup)
+    #        switch_update_manual(vstup)
             pass
+        elif vstup.ua != None:
+            switch_update_auto(vstup)
         elif vstup.f != None:
             importer(vstup.f)
         else:
@@ -321,4 +411,3 @@ if __name__ == "__main__":
 # TODO
 # jinak resit debug mode - ne ten test parametr
 # import csv pro update mother - dalsi polozku ?
-# 

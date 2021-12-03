@@ -93,6 +93,19 @@ class Machine(Base):
     state_id = Column(Integer)
     site_id = Column(Integer)
 
+class Group(Base):
+    __tablename__ = 'machines_machinegroup'
+    id = Column(Integer, primary_key=True)
+    name = Column(VARCHAR(128))
+    type = Column(VARCHAR(32))
+    data = Column(VARCHAR(128))
+
+class MachineGroup(Base):
+    __tablename__ = 'machines_machinegroup_machines'
+    id = Column(Integer, primary_key=True)
+    machinegroup_id = Column(Integer)
+    machine_id = Column(Integer)
+
 class Type(Base):
     __tablename__ = 'machines_machinetype'
     id = Column(Integer, primary_key=True)
@@ -160,6 +173,13 @@ class Vlan(Base):
     id_vlan = Column(Integer)
     notes = Column(VARCHAR(128))
 
+class Nagiosgroup(Base):
+    __tablename__ = 'nagios_nagioshostgroup'
+    id = Column(Integer, primary_key=True)
+    name = Column(VARCHAR(128))
+    description = Column(VARCHAR(128))
+    type = Column(VARCHAR(32))
+    
 # MAIN - TESTING 
 #os.system('clear')
 #server_name = 'vmadb1'

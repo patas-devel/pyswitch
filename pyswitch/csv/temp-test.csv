@@ -1,4 +1,5 @@
-name,a-server4
+column,server1
+name,
 #project_id,mail
 #type,DELL-PER730xd-2U
 #inventory,1000001
@@ -12,5 +13,10 @@ name,a-server4
 #rack,B12.TTC
 #rack_position,5
 #maintainer,tomas_ebenlendr
-#notes,poznamka !!! funguje ale prepise soucasnou poznamku a funguje jen jedno slovo
+#notes,20211203 - Toto je nova poznamka ... = ok
 #name-new,gmn1500
+#SIT,hkhk
+#eth,AABBCCDDEEFF - DORESIT
+#machinegroups,gigamail CZ (Product group)
+#nagios_system,gm-cache;gm-storage
+#SWITCH,xxx

@@ -14,8 +14,6 @@ import pandas as pd
 from configparser import Error
 import os, time, sys
 import subprocess as sub
-
-from pandas._libs.missing import NA
 import pydb as db
 import argparse
 import pyswitch as sw
@@ -27,21 +25,6 @@ import pyconfig as conf
 # VARS
 mother_prepro = '10.20.100.133'
 mother_prod = ''
-
-# CLASS
-class Device():
-
-    def __init__(self, server='', switch='', port='', desc=''):
-        self.server = server
-        self.switch = switch
-        self.port = port
-        self.desc = desc
-        
-    def __str__(self):
-        print(f'{self.server}, {self.switch}, {self.port}, {self.desc}')
-
-    def show(self):
-        print(f'INPUT: {self.server}, {self.switch}, {self.port}, {self.desc}')
 
 # FUNC
 def printx(text, c):
@@ -85,12 +68,12 @@ def importer(csv_file):
     #header = df.set_index['name-mother']
     first_col = df.columns[0]
     # vyber serveru pro zpracovani 1.server = 1:2, 2.server = 2:3, atd.
-    for sl in df.columns[1:2]:
-#        print(f'server: {sl}')
+    for col in df.columns[1:2]:
+#        print(f'server: {co}')
         for i in df.index:
-            server = sl
+            server = col
             stype = df.loc[i, first_col]
-            svalue = df.loc[i, sl]
+            svalue = df.loc[i, col]
             #print(type(svalue))
             # kontrola na prazdne hodnoty u stringu != nan ...
             if svalue == None or svalue != svalue or '#' in stype:
@@ -100,6 +83,7 @@ def importer(csv_file):
                 data = server + ',' + str(stype) + ',' + str(svalue)
                 #print(data)
             mother_update_auto(data)
+            
     
 
 #class Dict2class(object):
@@ -128,7 +112,7 @@ def get_input(test):
     parser.add_argument('-um', nargs='?', help='Update mother parameters - [cpu / ram / os / inventory / helios / qr / age / sn / port], usage: [cpu,8].')
     parser.add_argument('-us', nargs='?', help='Update switch configuration\n[AB13.TTC,45,1600,"Server gmnXXXX"]')
     parser.add_argument('-ua', nargs='?', help='Automatic update switch configuration\n[gmnXXXX"]')
-    parser.add_argument('-f', nargs='?', help='Import csv file with information about new server - [file_name]')
+    parser.add_argument('-f', nargs='?', help='Import csv config file and automatic update mother parameters and switch configuration - [file_name]')
     if DEBUG:
         args = parser.parse_args(test)
         print(args)
@@ -141,8 +125,8 @@ def get_input(test):
     return args
 
 def mother_info(vstup):
-    server = vstup.server
-    if vstup.i == 'mother':
+    server = vstup.ua
+    if vstup.i == 'mother' or vstup.ua != '':
         printx('# MOTHER INFO ##################################################','y')
     try: 
         srv = db.session.query(db.Machine).filter(db.Machine.name == server).first()
@@ -155,12 +139,12 @@ def mother_info(vstup):
             ip = round((int.ip))
         except TypeError as error:
             # pripad skynet1 ... why ?
-            print(f'Error: {error}')
+            print(f'ERR: {error}')
             ipv = '-- '
         else:
             ipv = str(ipaddress.IPv4Address(ip))
         QR = srv.qr_code
-        swi = 'A' + ra.name.split(' ')[0]  
+        switch = 'A' + ra.name.split(' ')[0]  
         if DEBUG:
             print(f'server id = {srv.id}')
             print(f'Type: {typ.name}')
@@ -175,12 +159,15 @@ def mother_info(vstup):
         if vstup.i == 'mother':
             print(f'\
             \nSERVER:\t\t{srv.name}\nMODEL:\t\t{typ.name}\nQR CODE:\t{QR}\
-            \nRACK:\t\t{ra.name}\nSWITCH:\t\t{swi}\nPORT\t\t{int.port}\
+            \nRACK:\t\t{ra.name}\nSWITCH:\t\t{switch}\nPORT\t\t{int.port}\
             \nMAC ADDR:\t{int.mac}\nIP ADDR:\t{ipv} (primary)\
             \nVLAN NAME:\t{vlan.name}\nVLAN:\t\t{vlan.id_vlan}\n\
             ')
-        info = swi + ',' + str(int.port)
-        return info
+        if vstup.ua != '':
+            #if 'gmn' in server:
+            #    vlan = swi.split('.')[1].lower()
+            info = switch + ',' + str(int.port) + ',' + str(vlan.id_vlan)
+            return info
 
 def mother_update_manual(vstup):
     if DEBUG:
@@ -214,11 +201,19 @@ def mother_update_auto(data):
     stype = data.split(',')[1]
     svalue = data.split(',')[2]
     #print(f'{server},{stype},{svalue}')
-    mother_script = '/root/mother/mother/machines/machine_update.py'
+    mother_script = '/root/mother/mother/machines/machines_update.py'
     net_list = ['mgmt', 'eth', 'e1', 'e2', 'e3']
+    switch_list = ['switch_data', 'switch', 'port', 'vlan', 'desc']
     if '#' in data:
         pass
+    # switch list
+    elif stype in switch_list:
+#        print(data)
+        print('Switch order')
+        print(f'Nacteno z csv: {server},{stype},{svalue}')
+        #mother_update_auto(data)
     else:
+        # mother list
         if stype == 'name':
             print(svalue)
         elif stype == 'project_id':
@@ -272,7 +267,8 @@ def mother_update_auto(data):
         mother_prepro_ssh = 'ssh root@10.20.100.133 ' + mother_script
         cmd = mother_prepro_ssh + ' ' + str(server) + ' ' + str(stype) + ' ' + str(svalue)
         print(cmd)
-        runcmd(cmd)
+        #runcmd(cmd)
+        print('Mother update automatic - finish.')
 
 
 def get_sw_info(vstup, cmd):
@@ -304,7 +300,8 @@ def runcmd(cmd):
     output,stderr = process.communicate()
     status = process.poll()
     out = output.decode('utf-8').split('.')[0] # item from list
-    print(f'{status}, {out}')
+    err = stderr
+    print(f'{status}, {out}, {err} ')
 
 
 def switch_info(vstup):
@@ -345,15 +342,20 @@ def switch_update_manual(vstup):
 
 
 def switch_update_auto(vstup):
-    data = mother_info()
-    switch = data.split(',')[0]
-    port = data.split(',')[1]
-    print(f'{switch}, {port}')
-    exit(0)
-    printx('# SWITCH UPDATE ##################################################','b')
-    # dodat sw port, ktere overujeme
-    get_sw_info(vstup)
+    data = mother_info(vstup)
+    try:
+        switch = data.split(',')[0]
+        port = data.split(',')[1]
+        vlan = data.split(',')[2]
+    except Error as err:
+        printx('ERR: Nejsou vsechny parametry pro zmenu configurace switche.', 'r')
+    else:
+        print(f'{switch}, {port}, {vlan}')
+    #printx('# SWITCH SHOW CONFIG ##################################################','b')
+    # vstupni informace jsou z motheru - ale u novych nebude vlan, tzn. ze bude to brat z excelu nebo ?
+    #get_sw_config(data)
     # Varianta postupnych dotazu na konfiguraci
+    exit(0)
     text = printx('\nMam nyni pokracovat ve zmene konfigurace portu switche (zmenim vlanu description) ? (ano | ne): ','r')
     choice = input(text)
     if choice.lower() == 'ne':
@@ -417,5 +419,6 @@ if __name__ == "__main__":
     main()
     
 # TODO
-# jinak resit debug mode - ne ten test parametr
-# import csv pro update mother - dalsi polozku ?
+# switch    - kontrola nastaveni portu, bridge agre a mac pred zmenou nastaveni
+#           - pri zpracovani zmen nasledne vypsat zmenu ?
+# mysql - propojeni do mother db remotely ...

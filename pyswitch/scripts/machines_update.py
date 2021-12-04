@@ -13,6 +13,10 @@ from  mother.machines.models import Machine
 
 #print(Machine._meta.get_all_field_names())
 
+# VARS
+LOG_FILE = '/root/mother/mother/machines/machines.log'
+
+# FUNC
 def server_create():
 	##m = Machine.objects.create(name='a-server6', serial_number='ABCEFGHIJK', project_id_id=1, inventory='testovaci6', cpu=4, ram=16, os='d10', HeliosID='123123', qr_code='12312346', type_id=132, state_id=1, site_id=1)
 	pass
@@ -21,11 +25,15 @@ def server_update(vstup):
 	server = vstup[1]
 	stype = vstup[2]
 	value = vstup[3]
-	print(server)
-	print(stype)
-	print(value)
+	data_in = 'Vstupy: ' + str(server) + ',' + str(stype) + ',' + str(value)
+	print(data_in)
 	if stype == 'cpu':
-        	Machine.objects.filter(name=server).update(cpu=value)
+		try:
+	        	Machine.objects.filter(name=server).update(cpu=value)
+		except Exception, e:
+			print('ERR: ' + str(e))
+		else:
+			print('OK: Hodnota CPU uspesne aktualizovana.')
         elif stype == 'project_id':
                 Machine.objects.filter(name=server).update(project_id=value)
 	elif stype == 'ram':
@@ -53,7 +61,13 @@ def server_update(vstup):
 	elif stype == 'rack_position':
 	        Machine.objects.filter(name=server).update(rack_position=value)
 	elif stype == 'maintainer':
-	        Machine.objects.filter(name=server).update(maintainer=value)
+		try:
+		        Machine.objects.filter(name=server).update(maintainer=value)
+		except Exception, e:
+			print('ERR: ' + str(e))
+		else:
+			print('OK: Maintainer byl aktualizovan.')
+
 #	elif stype == 'machinegroups':
 #                MachineGroup_machine.objects.filter(name=server).update(machinegroups=value)
         elif stype == 'switch_port':
@@ -64,8 +78,7 @@ def server_update(vstup):
 		except Exception, e:
 			print(e)
 		else:
-			print('Uspesne prejmenovano')
-
+			print('OK: Server uspesne prejmenovan.')
         elif stype == 'notes':
 		# decode notes
 	        base64_message = value
@@ -76,20 +89,19 @@ def server_update(vstup):
 		# read current note
 		note = Machine.objects.filter(name=server).get()
 		note_current = note.notes
-		note_new = value + '\n' + note_current
-#		print(note_new)
+		if note_current != '':
+			note_new = value + '\n' + note_current
+		else:
+			note_new = value
                 Machine.objects.filter(name=server).update(notes=note_new)
-	#print('Update was successfully completed.')
-#	elif stype == 'state': # mail storages dell 730 -> 132
-#		Machine.objects.filter(name=server).update(state_id=value)
 	
 
 def user_add():
+	pass
     #m = Machine.objects.update(name=''
     #from django.contrib.auth.models import User
     #user = User.objects.create_user('aaaa','aaaa@xyz.com','sn@pswrd')
     #user.save()
-    pass
 
 
 # MAIN
@@ -103,11 +115,11 @@ else:
    	server_update(vstup)
         now = datetime.now()
         td = now.strftime("%d-%m-%Y %H:%M:%S")
-	f = open('/root/mother/mother/machines/machine.log', 'a')
+	f = open(LOG_FILE, 'a')
 	text = td + ' ' + str(vstup) + '\n'
 	f.write(text)
 	f.close
 
    else:
-       print('Usage: ./server_update.py SERVER_NAME TYPE TYPE_VALUE')
+       print('Usage: ./machines_update.py SERVER_NAME TYPE TYPE_VALUE')
        exit(0)

@@ -40,24 +40,6 @@ def printx(text, c):
         colour = 'white'
     print(colored(text, colour))
 
-#def importer_test(csv_file):
-#    # prevedeni csv file do dictionary
-#    dict = {}
-#    with open(csv_file) as f:
-#        reader = csv.reader(f)
-#        dict = {rows[0]:rows[1] for rows in reader}
-#    d = Dict2class(dict)
-#    #d.State = 'prod'
-#    # loop na objects in dict
-#    for attr, value in d.__dict__.items():
-#        #print(f'{attr},{value}')
-#        data = d.name + ',' + attr + ',' + value
-#        if '#' in data:
-#            pass
-#        else:
-#            mother_update_auto(data)
-#        #if attr == 'os':
-#        #    data = attr + ',' + value
     
 def importer(csv_file):
     data = pd.read_csv(csv_file)
@@ -82,24 +64,8 @@ def importer(csv_file):
             else:
                 data = server + ',' + str(stype) + ',' + str(svalue)
                 #print(data)
-            mother_update_auto(data)
+            auto_updater(data)
             
-    
-
-#class Dict2class(object):
-#    """
-#    Turns a dictionary into a class
-#    """
-#    def __init__(self, dictionary):
-#        """Constructor"""
-#        for key in dictionary:
-#            setattr(self, key, dictionary[key])
-#    
-#    def __repr__(self):
-##        return "<dict2obj: %s="">" % self.__dict__
-#        attrs = str([x for x in dir(self) if "__" not in x])
-#        return "<dict2obj: %s="">" % attrs
-
 
 def get_input(test):
     ''' Parser na vstupni parametry '''
@@ -193,7 +159,7 @@ def mother_update_manual(vstup):
         printx(f'\nMother updating parameters ...\n','y')
         #runcmd(cmd)
         
-def mother_update_auto(data):
+def auto_updater(data):
     if DEBUG:
         print(data)
     #print(data)
@@ -206,14 +172,15 @@ def mother_update_auto(data):
     switch_list = ['switch_data', 'switch', 'port', 'vlan', 'desc']
     if '#' in data:
         pass
-    # switch list
+    # switch update
     elif stype in switch_list:
 #        print(data)
         print('Switch order')
         print(f'Nacteno z csv: {server},{stype},{svalue}')
         #mother_update_auto(data)
+        switch_info(svalue)
     else:
-        # mother list
+        # mother update
         if stype == 'name':
             print(svalue)
         elif stype == 'project_id':
@@ -306,17 +273,38 @@ def runcmd(cmd):
 
 def switch_info(vstup):
     # nactu parametry z motheru
-    info = mother_info(vstup)
+    if 'mother' in vstup:
+        info = mother_info(vstup)
+    else:
+        info = vstup
     printx('# SWITCH INFO ##################################################','b')
     try:
-        name = str(info.split(',')[0]).lower()
-        port = info.split(',')[1]
+        name = info.split(';')[0].lower()
+        port = info.split(';')[1]
+        vlan = info.split(';')[2]
+        #print(f'{name},{port},{vlan}')
     except Error as err:
         print(f'Error: {err}')
     else:
         print(f'ZADANO - switch: {name}, port: {port}\n')
         ss = sw.Switch(name, sw.switches[name], port)
-        ss.get_config('config', port)
+        for i in sw.check.keys():
+            sw.check[i] = 0
+        sw_output = ss.get_config('config', port)
+#    dict_test = {'link-group': 2, 'br': 1, 'mac': 1, 'br-ports': 1} 
+    if sw_check_config_state(sw.check):
+        print('Muzeme menit konfiguraci sw')
+    else:
+        print('Nemuzeme menit sw configuraci.')
+#    sw_check_config_state(dict_test)
+#   {'link-group': 2, 'br': 1, 'mac': 1, 'br-ports': 1}
+
+def sw_check_config_state(data):
+    print('HERE')
+    if data['mac'] == 1:
+        print('Je tam mac')
+        OK = False
+    return OK     
     
 def switch_update_manual(vstup):
     printx('# SWITCH UPDATE ##################################################','b')

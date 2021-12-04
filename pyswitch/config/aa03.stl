@@ -1,0 +1,50 @@
+Connecting to switch: aa03.stl [10.32.240.13]
+
+#
+interface GigabitEthernet1/0/2
+ port access vlan 3
+ loopback-detection enable
+ broadcast-suppression 3
+ port link-aggregation group 2
+#
+return
+#
+interface GigabitEthernet2/0/2
+ port access vlan 3
+ loopback-detection enable
+ broadcast-suppression 3
+ port link-aggregation group 2
+#
+return
+#
+interface Bridge-Aggregation2
+ port access vlan 3
+ link-aggregation mode dynamic
+#
+return
+MAC ADDR       VLAN ID  STATE          PORT INDEX               AGING TIME(s)
+3473-5a9f-de6c 3        Learned        Bridge-Aggregation2      AGING
+
+  ---  1 mac address(es) found  ---
+
+
+Loadsharing Type: Shar -- Loadsharing, NonS -- Non-Loadsharing
+Port Status: S -- Selected, U -- Unselected
+Flags:  A -- LACP_Activity, B -- LACP_Timeout, C -- Aggregation,
+        D -- Synchronization, E -- Collecting, F -- Distributing,
+        G -- Defaulted, H -- Expired
+
+Aggregation Interface: Bridge-Aggregation2
+Aggregation Mode: Dynamic
+Loadsharing Type: Shar
+System ID: 0x8000, 3822-d6e6-afe0
+Local:
+  Port             Status  Priority Oper-Key  Flag
+--------------------------------------------------------------------------------
+  GE1/0/2          S       32768    34        {ACDEFG}
+  GE2/0/2          U       32768    34        {ACG}
+Remote:
+  Actor            Partner Priority Oper-Key  SystemID               Flag
+--------------------------------------------------------------------------------
+  GE1/0/2          0       32768    0         0x8000, 0000-0000-0000 {DEF}
+  GE2/0/2          0       32768    0         0x8000, 0000-0000-0000 {DEF}

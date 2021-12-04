@@ -74,6 +74,12 @@ def commands(cmd, port):
         ]
         return check_sw_port
 
+check = {
+    'link-group': 0,
+    'br': 0,
+    'mac': 0,
+    'br-ports': 0
+}
 
 # Login information
 setup = conf.Config('switch')
@@ -85,7 +91,8 @@ swtype = setup.get_value('type')
 # CLASS
 class Switch():
     ''' Class switch '''
-
+    OUTPUT = []
+    
     def __init__(self, name='', ip='', port='', dc='', desc='', out=''):
         self.sw_name = name
         self.sw_ip = ip
@@ -104,11 +111,35 @@ class Switch():
     def __repr__(self):
         return f'DC: {self.sw_dc}, SWITCH: {self.sw_name}, IP: {self.sw_ip}, PORT: {self.sw_port}, DESC: {self.sw_desc}' 
 
-    def get_info(self, cmd):
+    def check_config(self, output, port):
+        # Gi1/0/X
+        check1 = 'link-aggregation group ' + port
+        check2 = 'link-aggregation mode dynamic' 
+        check3 = 'Learned'
+        check4 = 'GE1/0/' + port
+        check5 = 'GE2/0/' + port
+        if check1 in output:
+            print(f'Je tam ten link-aggregation {port}.') 
+            check['link-group'] += 1
+        # Bridge Aggregation X    
+        elif check2 in output:
+            print(f'Je tam bridge aggred dynamic')
+            check['br'] = 1
+        # Je tam MAC
+        elif check3 in output:
+            print('Je tam mac')
+            check['mac'] = 1
+        elif check4 in output and check5 in output:
+            print('2 porty u BRA')
+            check['br-ports'] = 1
+        print(check)
+    
+    def get_info(self, cmd, port):
         #self.sw_connect()
         self.sw_out = self.device.send_command(cmd)
+        self.check_config(self.sw_out, port)
         print(f'{Fore.BLUE}{self.sw_out}{Style.RESET_ALL}')
-#        self.sw_disconnect()
+#       self.sw_disconnect()
 
     def set_desc(self, cmd):
         self.sw_connect()
@@ -120,7 +151,8 @@ class Switch():
         self.sw_connect()
         for c in commands(cmd, port):
             #print(c)   
-            self.get_info(c)
+            self.get_info(c, port)
+        # clear value from check dict
         self.sw_disconnect()
 
     def set_config_old(self, note):

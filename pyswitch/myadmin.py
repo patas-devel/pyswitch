@@ -3,7 +3,7 @@
 
 
 __app__ = 'MyAdmin'
-__version__ = "1.29"
+__version__ = "1.30"
 __author__ = "Iceman"
 __copyright__ = "Copyright 2021"
 __license__ = "GPL"
@@ -51,7 +51,7 @@ def importer(csv_file):
     first_col = df.columns[0]
     # vyber serveru pro zpracovani 1.server = 1:2, 2.server = 2:3, atd.
     for col in df.columns[1:2]:
-#        print(f'server: {co}')
+        print(f'Zpracovavam server: <{col}>')
         for i in df.index:
             server = col
             stype = df.loc[i, first_col]
@@ -63,9 +63,87 @@ def importer(csv_file):
                 continue
             else:
                 data = server + ',' + str(stype) + ',' + str(svalue)
-                #print(data)
+                #print(f'Zpracovavam: {data} ---------')
             auto_updater(data)
             
+def auto_updater(data):
+    if DEBUG:
+        print(data)
+    #print(data)
+    server = data.split(',')[0]
+    stype = data.split(',')[1]
+    svalue = data.split(',')[2]
+    #print(f'Zpracovavam: {server},{stype},{svalue}')
+    mother_script = '/root/mother/mother/machines/machines_update.py'
+    # rucne doplnene
+    net_list = ['mgmt', 'eth', 'e1', 'e2', 'e3']
+    switch_list = ['switch_data', 'switch', 'port', 'vlan', 'desc']
+    if '#' in data:
+        pass
+    # switch update
+    elif stype in switch_list:
+#        print(data)
+        print('Switch order')
+        print(f'Nacteno z csv: {server},{stype},{svalue}')
+        #mother_update_auto(data)
+        switch_info(svalue)
+    else:
+        # mother update
+        if stype == 'name':
+            print(svalue)
+        elif stype == 'project_id':
+            srv = db.session.query(db.Project).filter(db.Project.name == svalue).first()
+            #print(f'project_id: {srv.id}')
+            svalue = srv.id
+        elif stype == 'type':
+            srv = db.session.query(db.Type).filter(db.Type.name == svalue).first()
+            #print(f'server-type: {srv.id}')
+            svalue = srv.id
+        elif stype == 'state':
+            srv = db.session.query(db.State).filter(db.State.name == svalue).first()
+            #print(f'state_id: {srv.id}')
+            svalue = srv.id
+        elif stype == 'rack':
+            srv = db.session.query(db.Rack).filter(db.Rack.name == svalue).first()
+            #print(f'rack_id: {srv.id}')
+            svalue = srv.id
+        elif stype == 'maintainer':
+            obj = db.session.query(db.User).filter(db.User.username == svalue).first()
+            #print(f'user_id: {obj.id}')
+            svalue = obj.id
+            # test
+            #svalue = 55
+        elif stype =='notes':
+            msg = svalue
+            message_bytes = msg.encode('ascii')
+            msg_enc = base64.b64encode(message_bytes)
+            msg_out = msg_enc.decode('ascii')
+            svalue = msg_out
+            #print(f'Encode: {svalue}')
+            #base64_message = svalue
+            #base64_bytes = base64_message.encode('ascii')
+            #message_bytes = base64.b64decode(base64_bytes)
+            #message = message_bytes.decode('ascii')
+            #print(f'Decode: {message}')
+        elif stype == 'machinegroups':
+            srv = db.session.query(db.Machine).filter(db.Machine.name == server).first()
+            mg = db.session.query(db.MachineGroup).filter(db.MachineGroup.machine_id == srv.id).first()
+            obj = db.session.query(db.Group).filter(db.Group.id == mg.machinegroup_id).first()
+            #print(obj.id)
+            svalue = obj.id
+        elif stype in net_list:
+            srv = db.session.query(db.Machine).filter(db.Machine.name == server).first()
+            #server = srv.id # a-server5
+            server = 2275
+            svalue = svalue.lower().replace(':','')
+            mother_script = '/root/mother/mother/networking/interfaces_update.py'
+        else:
+            pass
+        mother_prepro_ssh = 'ssh root@10.20.100.133 ' + mother_script
+        cmd = mother_prepro_ssh + ' ' + str(server) + ' ' + str(stype) + ' ' + str(svalue)
+        print(cmd)
+        #runcmd(cmd)
+
 
 def get_input(test):
     ''' Parser na vstupni parametry '''
@@ -159,84 +237,6 @@ def mother_update_manual(vstup):
         printx(f'\nMother updating parameters ...\n','y')
         #runcmd(cmd)
         
-def auto_updater(data):
-    if DEBUG:
-        print(data)
-    #print(data)
-    server = data.split(',')[0]
-    stype = data.split(',')[1]
-    svalue = data.split(',')[2]
-    #print(f'{server},{stype},{svalue}')
-    mother_script = '/root/mother/mother/machines/machines_update.py'
-    net_list = ['mgmt', 'eth', 'e1', 'e2', 'e3']
-    switch_list = ['switch_data', 'switch', 'port', 'vlan', 'desc']
-    if '#' in data:
-        pass
-    # switch update
-    elif stype in switch_list:
-#        print(data)
-        print('Switch order')
-        print(f'Nacteno z csv: {server},{stype},{svalue}')
-        #mother_update_auto(data)
-        switch_info(svalue)
-    else:
-        # mother update
-        if stype == 'name':
-            print(svalue)
-        elif stype == 'project_id':
-            srv = db.session.query(db.Project).filter(db.Project.name == svalue).first()
-            #print(f'project_id: {srv.id}')
-            svalue = srv.id
-        elif stype == 'type':
-            srv = db.session.query(db.Type).filter(db.Type.name == svalue).first()
-            #print(f'server-type: {srv.id}')
-            svalue = srv.id
-        elif stype == 'state':
-            srv = db.session.query(db.State).filter(db.State.name == svalue).first()
-            #print(f'state_id: {srv.id}')
-            svalue = srv.id
-        elif stype == 'rack':
-            srv = db.session.query(db.Rack).filter(db.Rack.name == svalue).first()
-            #print(f'rack_id: {srv.id}')
-            svalue = srv.id
-        elif stype == 'maintainer':
-            obj = db.session.query(db.User).filter(db.User.username == svalue).first()
-            #print(f'user_id: {obj.id}')
-            svalue = obj.id
-            # test
-            #svalue = 55
-        elif stype =='notes':
-            msg = svalue
-            message_bytes = msg.encode('ascii')
-            msg_enc = base64.b64encode(message_bytes)
-            msg_out = msg_enc.decode('ascii')
-            svalue = msg_out
-            #print(f'Encode: {svalue}')
-            #base64_message = svalue
-            #base64_bytes = base64_message.encode('ascii')
-            #message_bytes = base64.b64decode(base64_bytes)
-            #message = message_bytes.decode('ascii')
-            #print(f'Decode: {message}')
-        elif stype == 'machinegroups':
-            srv = db.session.query(db.Machine).filter(db.Machine.name == server).first()
-            mg = db.session.query(db.MachineGroup).filter(db.MachineGroup.machine_id == srv.id).first()
-            obj = db.session.query(db.Group).filter(db.Group.id == mg.machinegroup_id).first()
-            #print(obj.id)
-            svalue = obj.id
-        elif stype in net_list:
-            srv = db.session.query(db.Machine).filter(db.Machine.name == server).first()
-            #server = srv.id # a-server5
-            server = 2275
-            svalue = svalue.lower().replace(':','')
-            mother_script = '/root/mother/mother/networking/interfaces_update.py'
-        else:
-            pass
-        mother_prepro_ssh = 'ssh root@10.20.100.133 ' + mother_script
-        cmd = mother_prepro_ssh + ' ' + str(server) + ' ' + str(stype) + ' ' + str(svalue)
-        print(cmd)
-        #runcmd(cmd)
-        print('Mother update automatic - finish.')
-
 
 def get_sw_info(vstup, cmd):
     s = sw.Switch(vstup.switch, sw.switches[vstup.switch], vstup.port)

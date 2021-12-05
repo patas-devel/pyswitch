@@ -30,13 +30,12 @@ def server_update(vstup):
 		sw_port = value.split('-')[1]
 		try:
 		        Interface.objects.create(machine_id=server, type=stype, mac=mac_addr, port=sw_port)
-		except ValueError:
-			print('Error')
+		except ValueError, e:
+			print('ERR: Zaznam nebyl aktualizovan.' + str(e))
 		else:
-			print('Zaznam byl aktualizovan')
-	elif stype == 'name-new':
-		Machine.objects.filter(name=server).update(name=value)
-	print('Update was successfully completed.')
+			print('OK: Zaznam byl aktualizovan.')
+	else:
+		pass
 	
 
 def user_add():
@@ -58,7 +57,7 @@ else:
    	server_update(vstup)
         now = datetime.now()
         td = now.strftime("%d-%m-%Y %H:%M:%S")
-	f = open('/root/mother/mother/networking/intefaces.log', 'a')
+	f = open('/root/mother/mother/networking/interfaces.log', 'a')
 	text = td + ' ' + str(vstup) + '\n'
 	f.write(text)
 	f.close

@@ -17,6 +17,7 @@ import pyconfig as conf
 
 # setup for connection to switch
 setup = conf.Config('db-dev')
+#setup = conf.Config('db-prepro')
 dbuser = setup.get_value('user')
 dbpass = setup.get_value('pass')
 dbname = setup.get_value('dbname')
@@ -24,7 +25,11 @@ dbname = setup.get_value('dbname')
 
 # DB INIT
 Base = declarative_base()
+# DEV localhost
 conn_str = 'mysql://root:' + dbpass + '@127.0.0.1/' + dbname
+# PREPRO ale nefunguje
+# ERROR: sqlalchemy.exc.OperationalError: (MySQLdb._exceptions.OperationalError) (1043, 'Bad handshake')
+#conn_str = 'mysql://tester:' + dbpass + '@10.20.100.133/' + dbname
 engine = create_engine(conn_str, echo=False)
 conn = engine.connect()
 DBSession = sessionmaker(bind=engine)

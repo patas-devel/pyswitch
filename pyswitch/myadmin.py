@@ -41,7 +41,7 @@ def printx(text, c):
     print(colored(text, colour))
 
     
-def importer(csv_file):
+def import_csv(csv_file):
     data = pd.read_csv(csv_file)
     #print(data)
 #    df = pd.DataFrame(data, columns=['mother','Cold-dell740-35']) 
@@ -51,7 +51,7 @@ def importer(csv_file):
     first_col = df.columns[0]
     # vyber serveru pro zpracovani 1.server = 1:2, 2.server = 2:3, atd.
     for col in df.columns[1:2]:
-        print(f'Zpracovavam server: <{col}>')
+        print(f'Zpracovavam server: <{col}> | prostredi: {ENV}')
         for i in df.index:
             server = col
             stype = df.loc[i, first_col]
@@ -64,9 +64,10 @@ def importer(csv_file):
             else:
                 data = server + ',' + str(stype) + ',' + str(svalue)
                 #print(f'Zpracovavam: {data} ---------')
-            auto_updater(data)
+            prepare_data(data)
+
             
-def auto_updater(data):
+def prepare_data(data):
     if DEBUG:
         print(data)
     #print(data)
@@ -74,7 +75,7 @@ def auto_updater(data):
     stype = data.split(',')[1]
     svalue = data.split(',')[2]
     #print(f'Zpracovavam: {server},{stype},{svalue}')
-    mother_script = '/root/mother/mother/machines/machines_update.py'
+    mother_prepro_script = '/root/mother/mother/machines/machines_update.py'
     # rucne doplnene
     net_list = ['mgmt', 'eth', 'e1', 'e2', 'e3']
     switch_list = ['switch_data', 'switch', 'port', 'vlan', 'desc']
@@ -83,7 +84,7 @@ def auto_updater(data):
     # switch update
     elif stype in switch_list:
 #        print(data)
-        print('Switch order')
+        print('Switch configuration ...')
         print(f'Nacteno z csv: {server},{stype},{svalue}')
         #mother_update_auto(data)
         switch_info(svalue)
@@ -125,23 +126,46 @@ def auto_updater(data):
             #message_bytes = base64.b64decode(base64_bytes)
             #message = message_bytes.decode('ascii')
             #print(f'Decode: {message}')
-        elif stype == 'machinegroups':
-            srv = db.session.query(db.Machine).filter(db.Machine.name == server).first()
-            mg = db.session.query(db.MachineGroup).filter(db.MachineGroup.machine_id == srv.id).first()
-            obj = db.session.query(db.Group).filter(db.Group.id == mg.machinegroup_id).first()
+        #elif stype == 'machinegroups':
+        #    srv = db.session.query(db.Machine).filter(db.Machine.name == server).first()
+        #    mg = db.session.query(db.MachineGroup).filter(db.MachineGroup.machine_id == srv.id).first()
+        #    obj = db.session.query(db.Group).filter(db.Group.id == mg.machinegroup_id).first()
             #print(obj.id)
-            svalue = obj.id
+        #    svalue = obj.id
+        elif stype == 'switch_port':
+            print('FIXME: Nemam zpracuje naprimo, nepta se DB.')
         elif stype in net_list:
-            srv = db.session.query(db.Machine).filter(db.Machine.name == server).first()
-            #server = srv.id # a-server5
-            server = 2275
+            #server = 2275
+            #svalue = svalue.lower().replace(':','') + '-' + str(srv.switch_port)
             svalue = svalue.lower().replace(':','')
-            mother_script = '/root/mother/mother/networking/interfaces_update.py'
+            if ENV == 'PREPRO':
+                #srv = db.session.query(db.Machine).filter(db.Machine.name == server).first()
+                #server = srv.id
+                server = 2275 # a-server5
+                mother_prepro_script = '/root/mother/mother/networking/interfaces_update.py'
+            # PROD
+            elif ENV == 'PROD':
+                srv = db.session.query(db.Machine).filter(db.Machine.name == server).first()
+                server = srv.id
+                mother_prod_script = '/usr/share/pyshared/mother/networking/interfaces_update.py' 
         else:
             pass
-        mother_prepro_ssh = 'ssh root@10.20.100.133 ' + mother_script
-        cmd = mother_prepro_ssh + ' ' + str(server) + ' ' + str(stype) + ' ' + str(svalue)
+        # PROD / PREPRO
+        if ENV == 'PREPRO':
+            mother_prepro_script = '/root/mother/mother/networking/interfaces_update.py'
+        elif ENV == 'PROD':
+            mother_prod_script = '/usr/share/pyshared/mother/networking/interfaces_update.py' 
+            # PROD
+            #/usr/share/pyshared/mother/
+        if stype in net_list:
+            mother_prod_script = '/usr/share/pyshared/mother/networking/interfaces_update.py' 
+        else:
+            mother_prod_script = '/usr/share/pyshared/mother/machines/machines_update.py'
+        mother_prod_ssh = 'ssh root@mother.cent ' + mother_prod_script 
+        cmd = mother_prod_ssh + ' ' + str(server) + ' ' + str(stype) + ' ' + str(svalue)
         print(cmd)
+     
+        #print(cmd)
         #runcmd(cmd)
 
 
@@ -268,7 +292,8 @@ def runcmd(cmd):
     status = process.poll()
     out = output.decode('utf-8').split('.')[0] # item from list
     err = stderr
-    print(f'{status}, {out}, {err} ')
+    print(f'{status}, {out}')
+    #print(f'{err}') # err nic nevypisuje
 
 
 def switch_info(vstup):
@@ -362,8 +387,10 @@ def switch_update_auto(vstup):
         printx('################################################################','b')
         
 def init():
-    global DEBUG
+    global DEBUG, ENV
     DEBUG = False
+    # PROSTREDI - PROD / PREPRO
+    ENV = 'PREPRO'
 #    dev = Device()
     os.system('clear')
     printx(f'# MYADMIN {__version__} #', 'g')
@@ -396,7 +423,7 @@ def main():
         elif vstup.ua != None:
             switch_update_auto(vstup)
         elif vstup.f != None:
-            importer(vstup.f)
+            import_csv(vstup.f)
         else:
             printx('Chybne zadano, pravdepodobne jste nezadal vsechny pozadovane parametry!','r')
         # Informace o nastaveni switchi pro dany port

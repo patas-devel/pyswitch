@@ -140,3 +140,5 @@ cython_debug/
 # MY
 settings.ini
 switch.ini
+mother_db/*
+csv/*

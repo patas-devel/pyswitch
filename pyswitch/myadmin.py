@@ -26,7 +26,59 @@ import pyconfig as conf
 mother_prepro = '10.20.100.133'
 mother_prod = ''
 
+# CLASS
+
+class Server():
+    
+    SERVERS = [] 
+    Servers = {}
+    scount = 0
+    
+    def __init__(self, mother, name, project_id, type, inventory, state, cpu, ram, os, qr_code, purchase_date,
+                 serial_number, rack, rack_position, maintainer, switch_port, notes, 
+                 mgmt, mgmt_port, mgmt_vlan, eth, eth_port, eth_vlan, eth_e1, eth_e2, eth_e3, sw_name, sw_port, 
+                 sw_vlan, sw_desc):
+        self.mother = mother
+        self.name = name
+        self.project_id = project_id
+        self.type = type
+        self.inventory = inventory
+        self.state = state
+        self.cpu = cpu
+        self.ram = ram
+        self.os = os
+        self.qr_code = qr_code
+        self.purchase_date = purchase_date
+        self.serial_number = serial_number
+        self.rack = rack
+        self.rack_position = rack_position
+        self.maintainer = maintainer
+        self.switch_port = switch_port
+        self.notes = notes
+        self.mgmt = mgmt
+        self.mgmt_port = mgmt_port
+        self.mgmt_vlan = mgmt_vlan
+        self.eth = eth
+        self.eth_port = eth_port
+        self.eth_vlan = eth_vlan
+        self.eth_e1 = eth_e1
+        self.eth_e2 = eth_e2
+        self.eth_e3 = eth_e3
+        self.sw_name = sw_name
+        self.sw_port = sw_port
+        self.sw_vlan = sw_vlan
+        self.sw_desc = sw_desc
+        Server.scount += 1
+    
+    def __str__(self):
+        return f'Mother: {self.mother}, name: {self.name}, project_id: {self.project_id}, type: {self.type},\n \
+                inventory: {self.inventory}, state: {self.state}, cpu: {self.cpu}, ram: {self.ram}, os: {self.os}\n\
+                qr_code: {self.qr_code}, purchase_date: {self.purchase_date}, serial_number: {self.serial_number}\n\
+                rack: {self.rack}, rack_position: {self.rack_position}, maintainer: {self.maintainer}, switch_port: {self.switch_port}\n\
+                notes: {self.notes}'
+
 # FUNC
+
 def printx(text, c):
     if c == 'b':
         colour = 'blue'
@@ -42,6 +94,7 @@ def printx(text, c):
 
     
 def import_csv(csv_file):
+    #srv = Server()
     data = pd.read_csv(csv_file)
     #print(data)
 #    df = pd.DataFrame(data, columns=['mother','Cold-dell740-35']) 
@@ -50,7 +103,7 @@ def import_csv(csv_file):
     #header = df.set_index['name-mother']
     first_col = df.columns[0]
     # vyber serveru pro zpracovani 1.server = 1:2, 2.server = 2:3, atd.
-    for col in df.columns[1:2]:
+    for col in df.columns[2:3]:
         print(f'Zpracovavam server: <{col}> | prostredi: {ENV}')
         for i in df.index:
             server = col
@@ -67,10 +120,63 @@ def import_csv(csv_file):
             prepare_data(data)
 
             
+def new_way(csv_file):
+    data = pd.read_csv(csv_file)
+    #print(data)
+    #df = pd.DataFrame(data, columns=['mother','Cold-dell740-35']) 
+    df = pd.DataFrame(data)
+    first_col = df.columns[0]
+    # vyber serveru pro zpracovani 1.server = 1:2, 2.server = 2:3, atd.
+    for col in df.columns[1:3]:
+        s = Server(col)
+        print(f'Zpracovavam server: <{col}> | prostredi: {ENV}')
+        for i in df.index:
+            prvni = col
+            #druhy = col + 1
+            stype = df.loc[i, first_col]
+            svalue = df.loc[i, col]
+            if stype == 'name':
+                s.name = svalue
+            elif stype == 'project_id':
+                s.project_id = svalue
+            elif stype == 'type':
+                s.type = svalue
+            elif stype == 'inventory':
+                s.inventory = svalue
+            elif stype == 'state':
+                s.state = svalue
+            elif stype == 'cpu':
+                s.cpu = svalue
+            elif stype == 'ram':
+                s.ram == svalue
+            elif  stype == 'os':
+                s.os = svalue
+            elif stype == 'qr_code':
+                s.qr_code = svalue
+            elif stype == 'purchase_data':
+                s.purchase_date = svalue
+            elif stype == 'serial_number':
+                s.serial_number = svalue
+            elif stype == 'rack':
+                s.rack = svalue
+            elif stype == 'rack_position':
+                s.rack_position = svalue
+            elif stype == 'maintainer':
+                s.maintainer = svalue
+            elif stype == 'switch_port':
+                s.switch_port = svalue
+            elif stype == 'notes':
+                s.notes = svalue
+            #print(f'prvni: {prvni}, stype: {stype}, svalue: {svalue}')
+        s.SERVERS.append(s)
+    for i in s.SERVERS:
+        print(i)
+
 def prepare_data(data):
     if DEBUG:
         print(data)
     #print(data)
+    NET = False
     server = data.split(',')[0]
     stype = data.split(',')[1]
     svalue = data.split(',')[2]
@@ -87,7 +193,7 @@ def prepare_data(data):
         print('Switch configuration ...')
         print(f'Nacteno z csv: {server},{stype},{svalue}')
         #mother_update_auto(data)
-        switch_info(svalue)
+        #switch_info(svalue)
     else:
         # mother update
         if stype == 'name':
@@ -133,39 +239,38 @@ def prepare_data(data):
             #print(obj.id)
         #    svalue = obj.id
         elif stype == 'switch_port':
-            print('FIXME: Nemam zpracuje naprimo, nepta se DB.')
+            print(stype)
         elif stype in net_list:
-            #server = 2275
-            #svalue = svalue.lower().replace(':','') + '-' + str(srv.switch_port)
+            NET = True
             svalue = svalue.lower().replace(':','')
             if ENV == 'PREPRO':
                 #srv = db.session.query(db.Machine).filter(db.Machine.name == server).first()
                 #server = srv.id
                 server = 2275 # a-server5
-                mother_prepro_script = '/root/mother/mother/networking/interfaces_update.py'
             # PROD
             elif ENV == 'PROD':
                 srv = db.session.query(db.Machine).filter(db.Machine.name == server).first()
                 server = srv.id
-                mother_prod_script = '/usr/share/pyshared/mother/networking/interfaces_update.py' 
         else:
             pass
         # PROD / PREPRO
         if ENV == 'PREPRO':
-            mother_prepro_script = '/root/mother/mother/networking/interfaces_update.py'
+            if NET: 
+                mother_script = '/root/mother/mother/networking/interfaces_update.py'
+            else:
+                mother_script = '/root/mother/mother/machines/machines_update.py'
         elif ENV == 'PROD':
-            mother_prod_script = '/usr/share/pyshared/mother/networking/interfaces_update.py' 
-            # PROD
-            #/usr/share/pyshared/mother/
-        if stype in net_list:
-            mother_prod_script = '/usr/share/pyshared/mother/networking/interfaces_update.py' 
-        else:
-            mother_prod_script = '/usr/share/pyshared/mother/machines/machines_update.py'
-        mother_prod_ssh = 'ssh root@mother.cent ' + mother_prod_script 
-        cmd = mother_prod_ssh + ' ' + str(server) + ' ' + str(stype) + ' ' + str(svalue)
+            if NET:
+                mother_script = '/usr/share/pyshared/mother/networking/interfaces_update.py' 
+            else:
+                mother_script = '/usr/share/pyshared/mother/machines/machines_update.py' 
+
+        # RESULT AND DO
+        if ENV == 'PREPRO':
+            cmd = 'ssh root@10.20.100.133 ' + mother_script + ' ' + str(server) + ' ' + str(stype) + ' ' + str(svalue)
+        elif ENV == 'PROD':            
+            cmd = 'ssh root@mother.cent ' + mother_script + ' ' + str(server) + ' ' + str(stype) + ' ' + str(svalue)
         print(cmd)
-     
-        #print(cmd)
         #runcmd(cmd)
 
 
@@ -313,23 +418,27 @@ def switch_info(vstup):
     else:
         print(f'ZADANO - switch: {name}, port: {port}\n')
         ss = sw.Switch(name, sw.switches[name], port)
-        for i in sw.check.keys():
-            sw.check[i] = 0
-        sw_output = ss.get_config('config', port)
-#    dict_test = {'link-group': 2, 'br': 1, 'mac': 1, 'br-ports': 1} 
-    if sw_check_config_state(sw.check):
-        print('Muzeme menit konfiguraci sw')
-    else:
-        print('Nemuzeme menit sw configuraci.')
-#    sw_check_config_state(dict_test)
-#   {'link-group': 2, 'br': 1, 'mac': 1, 'br-ports': 1}
+        sw_output = ss.get_config('check', port)
+        #print(sw_output)
+        if sw_check_config_state(sw_output):
+            print('START - sw_config()')
+        else:
+            print('STOP - je nutne zkontrolovat nastaveni na SW')
 
 def sw_check_config_state(data):
     print('HERE')
-    if data['mac'] == 1:
-        print('Je tam mac')
-        OK = False
-    return OK     
+#    if data['GE1-UP'] is not data['GE2-UP'] is not data['BAGG-UP']:
+#        print('ALL PORTS is DOWN.')
+#        print('RUN SW CONFIG')
+#        return True
+#    elif data['GE1-MAC'] and data['GE2-MAC'] and data['BAGG-MAC']:
+#        print('NO MAC ADDRESSES')
+#        print('RUN SW CONFIG')
+#        return True
+#    else:
+#        return False
+    
+    
     
 def switch_update_manual(vstup):
     printx('# SWITCH UPDATE ##################################################','b')
@@ -423,7 +532,8 @@ def main():
         elif vstup.ua != None:
             switch_update_auto(vstup)
         elif vstup.f != None:
-            import_csv(vstup.f)
+            #import_csv(vstup.f)
+            new_way(vstup.f)
         else:
             printx('Chybne zadano, pravdepodobne jste nezadal vsechny pozadovane parametry!','r')
         # Informace o nastaveni switchi pro dany port

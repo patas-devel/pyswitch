@@ -19,14 +19,15 @@ eth,34:73:5A:9F:DE:6C-2,34:73:5A:9F:D6:BC-3,34:73:5A:9F:DE:64-4,34:73:5A:9E:D2:F
 e1,34:73:5A:9F:DE:6D-2,34:73:5A:9F:D6:BD-3,34:73:5A:9F:DE:65-4,34:73:5A:9E:D2:F9-5,34:73:5A:9F:D9:FD-6,34:73:5A:9F:43:81-41,34:73:5A:A0:0B:19-42,34:73:5A:9E:E2:81-43,34:73:5A:A0:0D:B9-44,34:73:5A:A0:48:BD-45
 e2,34:73:5A:9F:DE:6E-2,34:73:5A:9F:D6:BE-3,34:73:5A:9F:DE:66-4,34:73:5A:9E:D2:FA-5,34:73:5A:9F:D9:FE-6,34:73:5A:9F:43:82-41,34:73:5A:A0:0B:1A-42,34:73:5A:9E:E2:82-43,34:73:5A:A0:0D:BA-44,34:73:5A:A0:48:BE-45
 e3,34:73:5A:9F:DE:6F-2,34:73:5A:9F:D6:BF-3,34:73:5A:9F:DE:67-4,34:73:5A:9E:D2:FB-5,34:73:5A:9F:D9:FF-6,34:73:5A:9F:43:83-41,34:73:5A:A0:0B:1B-42,34:73:5A:9E:E2:83-43,34:73:5A:A0:0D:BB-44,34:73:5A:A0:48:BF-45
-#name,gmn1003,gmn1011,gmn1021,gmn1027,gmn1029,gmn1031,gmn1045,gmn1065,gmn1081,gmn1099
-#switch,AA03.stl,AA03.stl,AA03.stl,AA03.stl,AA03.stl,AB01.stl,AB01.stl,AB01.stl,AB01.stl,AB01.stl
-#port,2,3,4,5,6,41,42,43,44,45
-#vlan,1218,1218,1218,1218,1218,1218,1218,1218,1218,1218
-#desc,gmn1003,gmn1011,gmn1021,gmn1027,gmn1029,gmn1031,gmn1045,gmn1065,gmn1081,gmn1099
-#switch_data,AA03.stl;2;1218;gmn1003,AA03.stl;3;1218;gmn1011,AA03.stl;4;1218;gmn1021,AA03.stl;5;1218;gmn1027,AA03.stl;6;1218;gmn1029,AB01.stl;41;1218;gmn1031,AB01.stl;42;1218;gmn1045,AB01.stl;43;1218;gmn1065,AB01.stl;44;1218;gmn1081,AB01.stl;45;1218;gmn1099
-#machinegroups,gigamail CZ (Product group),gigamail CZ (Product group),gigamail CZ (Product group),gigamail CZ (Product group),gigamail CZ (Product group),gigamail CZ (Product group),gigamail CZ (Product group),gigamail CZ (Product group),gigamail CZ (Product group),gigamail CZ (Product group)
-#nagios_system,"gm-cache, gm-storage","gm-cache, gm-storage","gm-cache, gm-storage","gm-cache, gm-storage","gm-cache, gm-storage","gm-cache, gm-storage","gm-cache, gm-storage","gm-cache, gm-storage","gm-cache, gm-storage","gm-cache, gm-storage"
-#mgmt_vlan,1220,1220,1220,1220,1220,1220,1220,1220,1220,1220
-#eth_subnet,,,,,,,,,,
-#eth_ip_primary,yes,yes,yes,yes,yes,yes,yes,yes,yes,yes
+name,gmn1003,gmn1011,gmn1021,gmn1027,gmn1029,gmn1031,gmn1045,gmn1065,gmn1081,gmn1099
+switch,AA03.stl,AA03.stl,AA03.stl,AA03.stl,AA03.stl,AB01.stl,AB01.stl,AB01.stl,AB01.stl,AB01.stl
+port,2,3,4,5,6,41,42,43,44,45
+vlan,1218,1218,1218,1218,1218,1218,1218,1218,1218,1218
+desc,gmn1003,gmn1011,gmn1021,gmn1027,gmn1029,gmn1031,gmn1045,gmn1065,gmn1081,gmn1099
+switch_data,AA03.stl;2;1218;gmn1003,AA03.stl;3;1218;gmn1011,AA03.stl;4;1218;gmn1021,AA03.stl;5;1218;gmn1027,AA03.stl;6;1218;gmn1029,AB01.stl;41;1218;gmn1031,AB01.stl;42;1218;gmn1045,AB01.stl;43;1218;gmn1065,AB01.stl;44;1218;gmn1081,AB01.stl;45;1218;gmn1099
+switch_data,AB13.ttc;;1218;
+machinegroups,gigamail CZ (Product group),gigamail CZ (Product group),gigamail CZ (Product group),gigamail CZ (Product group),gigamail CZ (Product group),gigamail CZ (Product group),gigamail CZ (Product group),gigamail CZ (Product group),gigamail CZ (Product group),gigamail CZ (Product group)
+nagios_system,"gm-cache, gm-storage","gm-cache, gm-storage","gm-cache, gm-storage","gm-cache, gm-storage","gm-cache, gm-storage","gm-cache, gm-storage","gm-cache, gm-storage","gm-cache, gm-storage","gm-cache, gm-storage","gm-cache, gm-storage"
+mgmt_vlan,1220,1220,1220,1220,1220,1220,1220,1220,1220,1220
+eth_subnet,,,,,,,,,,
+eth_ip_primary,yes,yes,yes,yes,yes,yes,yes,yes,yes,yes

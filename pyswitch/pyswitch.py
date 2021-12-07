@@ -11,6 +11,7 @@
 # - overit ze hostname sw ma ip adresu z moji tabulky !
 
 # MODULS
+import re
 from re import I
 import sys, os
 import subprocess
@@ -22,7 +23,8 @@ import pyconfig as conf
 
 
 # VAR
-# # aa08, ab08,ab10,ab11,ab12 nejsou
+# aa08, ab08,ab10,ab11,ab12 nejsou
+# update: 07.12.2021
 switches = { 
      'aa01.stl': '10.32.240.11',
      'aa02.stl': '10.32.240.12',
@@ -58,27 +60,49 @@ switches = {
 # without port
 def commands(cmd, port):
     port = str(port)
-    if cmd == 'config':
-        check_sw_config = [
-            'display current-configuration interface gi1/0/' + port, 
-            'display current-configuration interface gi2/0/' + port,
-            'display current-configuration interface bridge-aggregation ' + port,
-            'display mac-address interface Bridge-Aggregation ' + port,
-            'display link-aggregation verbose Bridge-Aggregation ' + port
-        ]
+    if cmd == 'check':
+        check_sw_config = {
+            1: 'display interface brief | incl GE1/0/' + port,
+            2: 'display interface brief | incl GE2/0/' + port,
+            3: 'display interface brief | incl BAGG' + port,
+            
+            4: 'display mac-address interface GigabitEthernet1/0/' + port,
+            5: 'display mac-address interface GigabitEthernet2/0/' + port,
+            6: 'display mac-address interface Bridge-Aggregation ' + port,
+            
+            7: 'display link-aggregation verbose Bridge-Aggregation ' + port,
+            
+            8: 'display current-configuration interface gi1/0/' + port,
+            9: 'display current-configuration interface gi2/0/' + port,
+            10: 'display current-configuration interface bridge-aggregation ' + port
+        }
         return check_sw_config
-    elif cmd == 'port':
-        check_sw_port = [
-            'display interface brief | incl GE1/0/' + port,
-            'display interface brief | incl GE2/0/' + port
+    elif cmd == 'config':
+        make_config_sw = [
+            'interface GigabitEthernet 1/0/' + port,
+            'port link-aggregation group ' + port,
+            'description gmnXXXX',
+            'interface GigabitEthernet 2/0/' + port,
+            'port link-aggregation group ' + port,
+            'description gmnXXXX',
+            'interface Bridge-Aggregation' + port,
+            'link-aggregation mode dynamic',
+            'port access vlan ' # FIXME potrebuji jeste vlanu
+            'description gmnXXXX'
         ]
-        return check_sw_port
 
-check = {
-    'link-group': 0,
-    'br': 0,
-    'mac': 0,
-    'br-ports': 0
+
+CHECK = {
+1: 'The brief information of interface(s) under bridge mode:\nLink: ADM - administratively down; Stby - standby\nSpeed or Duplex: (a)/A - auto; H - half; F - full\nType: A - access; T - trunk; H - hybrid\nInterface            Link Speed   Duplex Type PVID Description\nGE1/0/30             DOWN auto    A      A    1601\n', 
+2: 'The brief information of interface(s) under bridge mode:\nLink: ADM - administratively down; Stby - standby\nSpeed or Duplex: (a)/A - auto; H - half; F - full\nType: A - access; T - trunk; H - hybrid\nInterface            Link Speed   Duplex Type PVID Description\nGE2/0/30             DOWN auto    A      A    1601\n', 
+3: 'The brief information of interface(s) under bridge mode:\nLink: ADM - administratively down; Stby - standby\nSpeed or Duplex: (a)/A - auto; H - half; F - full\nType: A - access; T - trunk; H - hybrid\nInterface            Link Speed   Duplex Type PVID Description\nBAGG30               DOWN auto    A      A    1601\n', 
+4: 'MAC ADDR       VLAN ID  STATE          PORT INDEX               AGING TIME(s)\n\n  ---  No mac address found  ---\n', 
+5: 'MAC ADDR       VLAN ID  STATE          PORT INDEX               AGING TIME(s)\n\n  ---  No mac address found  ---\n', 
+6: 'MAC ADDR       VLAN ID  STATE          PORT INDEX               AGING TIME(s)\n\n  ---  No mac address found  ---\n', 
+7: '\nLoadsharing Type: Shar -- Loadsharing, NonS -- Non-Loadsharing\nPort Status: S -- Selected, U -- Unselected\nFlags:  A -- LACP_Activity, B -- LACP_Timeout, C -- Aggregation,\n        D -- Synchronization, E -- Collecting, F -- Distributing,\n        G -- Defaulted, H -- Expired\n\nAggregation Interface: Bridge-Aggregation30\nAggregation Mode: Dynamic\nLoadsharing Type: Shar\nSystem ID: 0x8000, b8af-67e7-0a15\nLocal:\n  Port             Status  Priority Oper-Key  Flag\n--------------------------------------------------------------------------------\n  GE1/0/30         U       32768    29        {ACG}\n  GE2/0/30         U       32768    29        {ACG}\nRemote:\n  Actor            Partner Priority Oper-Key  SystemID               Flag\n--------------------------------------------------------------------------------\n  GE1/0/30         0       32768    0         0x8000, 0000-0000-0000 {EF}\n  GE2/0/30         0       32768    0         0x8000, 0000-0000-0000 {EF}', 
+8: '#\ninterface GigabitEthernet1/0/30\n port access vlan 1601\n loopback-detection enable\n broadcast-suppression 1\n multicast-suppression 1\n unicast-suppression 1\n undo jumboframe enable\n stp edged-port enable\n undo lldp enable\n port link-aggregation group 30\n#\nreturn', 
+9: '#\ninterface GigabitEthernet2/0/30\n port access vlan 1601\n loopback-detection enable\n broadcast-suppression 1\n multicast-suppression 1\n unicast-suppression 1\n undo jumboframe enable\n stp edged-port enable\n undo lldp enable\n port link-aggregation group 30\n#\nreturn', 
+10: '#\ninterface Bridge-Aggregation30\n port access vlan 1601\n link-aggregation mode dynamic\n stp edged-port enable\n#\nreturn'
 }
 
 # Login information
@@ -91,7 +115,7 @@ swtype = setup.get_value('type')
 # CLASS
 class Switch():
     ''' Class switch '''
-    OUTPUT = []
+    OUTPUT = {}
     
     def __init__(self, name='', ip='', port='', dc='', desc='', out=''):
         self.sw_name = name
@@ -111,36 +135,49 @@ class Switch():
     def __repr__(self):
         return f'DC: {self.sw_dc}, SWITCH: {self.sw_name}, IP: {self.sw_ip}, PORT: {self.sw_port}, DESC: {self.sw_desc}' 
 
-    def check_config(self, output, port):
-        # Gi1/0/X
-        check1 = 'link-aggregation group ' + port
-        check2 = 'link-aggregation mode dynamic' 
-        check3 = 'Learned'
-        check4 = 'GE1/0/' + port
-        check5 = 'GE2/0/' + port
-        if check1 in output:
-            print(f'Je tam ten link-aggregation {port}.') 
-            check['link-group'] += 1
-        # Bridge Aggregation X    
-        elif check2 in output:
-            print(f'Je tam bridge aggred dynamic')
-            check['br'] = 1
-        # Je tam MAC
-        elif check3 in output:
-            print('Je tam mac')
-            check['mac'] = 1
-        elif check4 in output and check5 in output:
-            print('2 porty u BRA')
-            check['br-ports'] = 1
-        print(check)
+    def check_config(self, data, port):
+        # TODO
+        # nutne zadat port presne jinak to vypise mnohem vice portu ge1/0/2 -> 0/21 0/22xxx
+        RESULT = {}
+        for k, v in data.items():
+            if k == 1:
+                RESULT['GE1-UP'] = True if v.count('GE1/0/' + port + '              UP') == 1 else False
+            elif k == 2:
+                RESULT['GE2-UP'] = True if v.count('GE2/0/' + port + '              UP') == 1 else False
+            elif k == 3:
+                RESULT['BAGG-UP'] = True if v.count('BAGG' + port + '                UP') == 1 else False
+            elif k == 4:
+                RESULT['GE1-MAC'] = False if v.count('No mac address found') ==1 else True
+            elif k == 5:
+                RESULT['GE2-MAC'] = False if v.count('No mac address found') ==1 else True
+            elif k == 6:
+                RESULT['BAGG-MAC'] = False if v.count('No mac address found') ==1 else True
+            elif k == 7:
+                if v.count('GE1/0/' + port + '         S') == 1 and v.count('GE2/0/' + port + '         S'):
+                    a = 'JE TAM SS'
+                else:
+                    a = 'NENI TAK SS'
+                RESULT['BAGG-VERB'] = a
+            elif k == 8:
+                a = 'loopback: yes' if v.count('loopback') == 1 else 'loopback: no'
+                b = 'broadcast: yes' if v.count('broadcast') == 1 else 'broadcast: no'
+                c = 'link-aggregation: yes' if v.count('link-aggregation group ' + str(port)) == 1 else 'link-aggregation: no'
+                res = (a, b, c)
+                RESULT['GE1-CONF'] = res
+            elif k == 9:
+                a = 'loopback: yes' if v.count('loopback') == 1 else 'loopback: no'
+                b = 'broadcast: yes' if v.count('broadcast') == 1 else 'broadcast: no'
+                c = 'link-aggregation: yes' if v.count('link-aggregation group ' + str(port)) == 1 else 'link-aggregation: no'
+                res = (a, b, c)
+                RESULT['GE2-CONF'] = res 
+            elif k == 10:
+                a = 'bagg mode dynamic: yes' if v.count('link-aggregation mode dynamic') == 1 else 'bagg mode dynamic: no'
+                b =  ''
+                res = (a, b)
+                RESULT['BAGG-CONF'] = res
+        print(RESULT)
+        #return RESULT
     
-    def get_info(self, cmd, port):
-        #self.sw_connect()
-        self.sw_out = self.device.send_command(cmd)
-        self.check_config(self.sw_out, port)
-        print(f'{Fore.BLUE}{self.sw_out}{Style.RESET_ALL}')
-#       self.sw_disconnect()
-
     def set_desc(self, cmd):
         self.sw_connect()
         self.sw_out = self.device.send_config_set(cmd)
@@ -149,11 +186,14 @@ class Switch():
     
     def get_config(self, cmd, port):
         self.sw_connect()
-        for c in commands(cmd, port):
-            #print(c)   
-            self.get_info(c, port)
-        # clear value from check dict
-        self.sw_disconnect()
+        for k, cmd in commands(cmd, port).items():
+            print(cmd)   
+            data = self.device.send_command(cmd)
+            Switch.OUTPUT[k] = data
+            print(f'{Fore.BLUE}{data}{Style.RESET_ALL}')
+        self.sw_disconnect()    
+        self.check_config(Switch.OUTPUT, port)
+        #self.check_config(Switch.OUTPUT, port)
 
     def set_config_old(self, note):
         self.sw_connect()

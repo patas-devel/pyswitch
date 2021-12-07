@@ -10,6 +10,7 @@ __license__ = "GPL"
 
 
 import csv, base64
+from typing import Dict
 import pandas as pd
 from configparser import Error
 import os, time, sys
@@ -23,59 +24,10 @@ import pyconfig as conf
 
 
 # VARS
+DATA = []
 mother_prepro = '10.20.100.133'
 mother_prod = ''
-
-# CLASS
-
-class Server():
-    
-    SERVERS = [] 
-    Servers = {}
-    scount = 0
-    
-    def __init__(self, mother, name, project_id, type, inventory, state, cpu, ram, os, qr_code, purchase_date,
-                 serial_number, rack, rack_position, maintainer, switch_port, notes, 
-                 mgmt, mgmt_port, mgmt_vlan, eth, eth_port, eth_vlan, eth_e1, eth_e2, eth_e3, sw_name, sw_port, 
-                 sw_vlan, sw_desc):
-        self.mother = mother
-        self.name = name
-        self.project_id = project_id
-        self.type = type
-        self.inventory = inventory
-        self.state = state
-        self.cpu = cpu
-        self.ram = ram
-        self.os = os
-        self.qr_code = qr_code
-        self.purchase_date = purchase_date
-        self.serial_number = serial_number
-        self.rack = rack
-        self.rack_position = rack_position
-        self.maintainer = maintainer
-        self.switch_port = switch_port
-        self.notes = notes
-        self.mgmt = mgmt
-        self.mgmt_port = mgmt_port
-        self.mgmt_vlan = mgmt_vlan
-        self.eth = eth
-        self.eth_port = eth_port
-        self.eth_vlan = eth_vlan
-        self.eth_e1 = eth_e1
-        self.eth_e2 = eth_e2
-        self.eth_e3 = eth_e3
-        self.sw_name = sw_name
-        self.sw_port = sw_port
-        self.sw_vlan = sw_vlan
-        self.sw_desc = sw_desc
-        Server.scount += 1
-    
-    def __str__(self):
-        return f'Mother: {self.mother}, name: {self.name}, project_id: {self.project_id}, type: {self.type},\n \
-                inventory: {self.inventory}, state: {self.state}, cpu: {self.cpu}, ram: {self.ram}, os: {self.os}\n\
-                qr_code: {self.qr_code}, purchase_date: {self.purchase_date}, serial_number: {self.serial_number}\n\
-                rack: {self.rack}, rack_position: {self.rack_position}, maintainer: {self.maintainer}, switch_port: {self.switch_port}\n\
-                notes: {self.notes}'
+sshserver = ''
 
 # FUNC
 
@@ -92,186 +44,141 @@ def printx(text, c):
         colour = 'white'
     print(colored(text, colour))
 
+
+class Dict2class(object):
+    SERVER = []
+    def __init__(self, dictionary):
+        for key in dictionary:
+            setattr(self, key, dictionary[key])
     
-def import_csv(csv_file):
-    #srv = Server()
-    data = pd.read_csv(csv_file)
-    #print(data)
-#    df = pd.DataFrame(data, columns=['mother','Cold-dell740-35']) 
-    df = pd.DataFrame(data)
-    #print (df)
-    #header = df.set_index['name-mother']
-    first_col = df.columns[0]
-    # vyber serveru pro zpracovani 1.server = 1:2, 2.server = 2:3, atd.
-    for col in df.columns[2:3]:
-        print(f'Zpracovavam server: <{col}> | prostredi: {ENV}')
-        for i in df.index:
-            server = col
-            stype = df.loc[i, first_col]
-            svalue = df.loc[i, col]
-            #print(type(svalue))
-            # kontrola na prazdne hodnoty u stringu != nan ...
-            if svalue == None or svalue != svalue or '#' in stype:
-                #print('PASS - not value!')
-                continue
-            else:
-                data = server + ',' + str(stype) + ',' + str(svalue)
-                #print(f'Zpracovavam: {data} ---------')
-            prepare_data(data)
+    def __repr__(self):
+#        return "<dict2obj: %s="">" % self.__dict__
+        attrs = str([x for x in dir(self) if "__" not in x])
+        return "<dict2obj: %s="">" % attrs
 
+def counter(csv_file):
+    f = open(csv_file, 'r')
+    params = len(f.readlines())
+    g = open(csv_file, 'r')
+    servers = len((g.readline()).split(','))
+    printx(f'INFO: Vstupni soubor obsahuje: {servers} serveru | {params} parametru.', 'b')
+    return servers
+
+def import_auto(csv_file):
+    # AUTOCOUNT - mozne zadat rucne
+    servers = counter(csv_file)
+    dict = {}
+    for s in range(1, servers):
+        with open(csv_file) as f:
+            reader = csv.reader(f)
+            dict = {rows[0]:rows[s] for rows in reader}
+        d = Dict2class(dict)
+        DATA.append(d)
+#    print(DATA[6].name)
+    for srv in DATA[1:2]:
+        prepare_data(srv)
             
-def new_way(csv_file):
-    data = pd.read_csv(csv_file)
-    #print(data)
-    #df = pd.DataFrame(data, columns=['mother','Cold-dell740-35']) 
-    df = pd.DataFrame(data)
-    first_col = df.columns[0]
-    # vyber serveru pro zpracovani 1.server = 1:2, 2.server = 2:3, atd.
-    for col in df.columns[1:3]:
-        s = Server(col)
-        print(f'Zpracovavam server: <{col}> | prostredi: {ENV}')
-        for i in df.index:
-            prvni = col
-            #druhy = col + 1
-            stype = df.loc[i, first_col]
-            svalue = df.loc[i, col]
-            if stype == 'name':
-                s.name = svalue
-            elif stype == 'project_id':
-                s.project_id = svalue
-            elif stype == 'type':
-                s.type = svalue
-            elif stype == 'inventory':
-                s.inventory = svalue
-            elif stype == 'state':
-                s.state = svalue
-            elif stype == 'cpu':
-                s.cpu = svalue
-            elif stype == 'ram':
-                s.ram == svalue
-            elif  stype == 'os':
-                s.os = svalue
-            elif stype == 'qr_code':
-                s.qr_code = svalue
-            elif stype == 'purchase_data':
-                s.purchase_date = svalue
-            elif stype == 'serial_number':
-                s.serial_number = svalue
-            elif stype == 'rack':
-                s.rack = svalue
-            elif stype == 'rack_position':
-                s.rack_position = svalue
-            elif stype == 'maintainer':
-                s.maintainer = svalue
-            elif stype == 'switch_port':
-                s.switch_port = svalue
-            elif stype == 'notes':
-                s.notes = svalue
-            #print(f'prvni: {prvni}, stype: {stype}, svalue: {svalue}')
-        s.SERVERS.append(s)
-    for i in s.SERVERS:
-        print(i)
 
+def check_empty(data):
+    OK = []
+    for attr, value in data.__dict__.items():
+        #print(f'{attr},{value}')
+        if value == '' or value == None or value is None:
+            printx(f'Promenna {attr} ma prazdnou hodnotu {value}.','r') 
+            OK.append(0)
+    return True if 0 in OK else False
+        
+    
 def prepare_data(data):
-    if DEBUG:
-        print(data)
-    #print(data)
-    NET = False
-    server = data.split(',')[0]
-    stype = data.split(',')[1]
-    svalue = data.split(',')[2]
-    #print(f'Zpracovavam: {server},{stype},{svalue}')
-    mother_prepro_script = '/root/mother/mother/machines/machines_update.py'
-    # rucne doplnene
-    net_list = ['mgmt', 'eth', 'e1', 'e2', 'e3']
-    switch_list = ['switch_data', 'switch', 'port', 'vlan', 'desc']
-    if '#' in data:
-        pass
-    # switch update
-    elif stype in switch_list:
-#        print(data)
-        print('Switch configuration ...')
-        print(f'Nacteno z csv: {server},{stype},{svalue}')
-        #mother_update_auto(data)
-        #switch_info(svalue)
+#    print(data)
+#   CHECK VALUES
+    ok = check_empty(data)
+    if ok:
+        printx('Ukoncuji zpracovani - soubor obsahuje nedoplnene hodnoty!','r')
+        #exit(0)
     else:
-        # mother update
-        if stype == 'name':
-            print(svalue)
-        elif stype == 'project_id':
-            srv = db.session.query(db.Project).filter(db.Project.name == svalue).first()
-            #print(f'project_id: {srv.id}')
-            svalue = srv.id
-        elif stype == 'type':
-            srv = db.session.query(db.Type).filter(db.Type.name == svalue).first()
-            #print(f'server-type: {srv.id}')
-            svalue = srv.id
-        elif stype == 'state':
-            srv = db.session.query(db.State).filter(db.State.name == svalue).first()
-            #print(f'state_id: {srv.id}')
-            svalue = srv.id
-        elif stype == 'rack':
-            srv = db.session.query(db.Rack).filter(db.Rack.name == svalue).first()
-            #print(f'rack_id: {srv.id}')
-            svalue = srv.id
-        elif stype == 'maintainer':
-            obj = db.session.query(db.User).filter(db.User.username == svalue).first()
-            #print(f'user_id: {obj.id}')
-            svalue = obj.id
-            # test
-            #svalue = 55
-        elif stype =='notes':
-            msg = svalue
+        try:
+            pom = db.session.query(db.Project).filter(db.Project.name == data.project).first()
+            data.project = pom.id
+            pom = db.session.query(db.Type).filter(db.Type.name == data.type).first()
+            data.type = pom.id 
+            pom = db.session.query(db.State).filter(db.State.name == data.state).first()
+            data.state = pom.id
+            pom = db.session.query(db.Rack).filter(db.Rack.name == data.rack).first()
+            data.rack = pom.id
+            usr = db.session.query(db.User).filter(db.User.username == data.maintainer).first()
+            data.maintainer = usr.id 
+        except AttributeError as err:
+            print(f'ERR: Chyba cteni z DB {err}')
+        else:
+            # LOWER SWITCH NAME
+            data.sw_name = data.sw_name.lower()
+            # ENCRYPT NOTES
+            msg = data.notes
             message_bytes = msg.encode('ascii')
             msg_enc = base64.b64encode(message_bytes)
             msg_out = msg_enc.decode('ascii')
-            svalue = msg_out
+            data.notes = msg_out
             #print(f'Encode: {svalue}')
             #base64_message = svalue
             #base64_bytes = base64_message.encode('ascii')
             #message_bytes = base64.b64decode(base64_bytes)
             #message = message_bytes.decode('ascii')
             #print(f'Decode: {message}')
-        #elif stype == 'machinegroups':
+            # MACHINEGROUPS 
         #    srv = db.session.query(db.Machine).filter(db.Machine.name == server).first()
         #    mg = db.session.query(db.MachineGroup).filter(db.MachineGroup.machine_id == srv.id).first()
         #    obj = db.session.query(db.Group).filter(db.Group.id == mg.machinegroup_id).first()
             #print(obj.id)
         #    svalue = obj.id
-        elif stype == 'switch_port':
-            print(stype)
-        elif stype in net_list:
-            NET = True
-            svalue = svalue.lower().replace(':','')
-            if ENV == 'PREPRO':
-                #srv = db.session.query(db.Machine).filter(db.Machine.name == server).first()
-                #server = srv.id
-                server = 2275 # a-server5
-            # PROD
-            elif ENV == 'PROD':
-                srv = db.session.query(db.Machine).filter(db.Machine.name == server).first()
-                server = srv.id
-        else:
-            pass
-        # PROD / PREPRO
-        if ENV == 'PREPRO':
-            if NET: 
-                mother_script = '/root/mother/mother/networking/interfaces_update.py'
-            else:
-                mother_script = '/root/mother/mother/machines/machines_update.py'
-        elif ENV == 'PROD':
-            if NET:
-                mother_script = '/usr/share/pyshared/mother/networking/interfaces_update.py' 
-            else:
-                mother_script = '/usr/share/pyshared/mother/machines/machines_update.py' 
+    if ENV == 'PREPRO':
+        sshserver = 'ssh root@10.20.100.133 '
+        mother_script = '/root/mother/mother/machines/machines_update.py'
+    elif ENV == 'PROD':
+        sshserver = 'ssh root@mother.cent ' 
+        mother_script = '/usr/share/pyshared/mother/networking/interfaces_update.py' 
+    
+    MOTHER_CMDS = {
+        'project':  sshserver + mother_script + ' ' + str(data.mother) + ' project_id ' + str(data.project),  #name
+        'type':     sshserver + mother_script + ' ' + str(data.mother) + ' type ' + str(data.type),  #name
+        'inventory':sshserver + mother_script + ' ' + str(data.mother) + ' inventory ' + str(data.inventory),  #name
+        'state':    sshserver + mother_script + ' ' + str(data.mother) + ' state ' + str(data.state),  #name
+        'cpu':      sshserver + mother_script + ' ' + str(data.mother) + ' cpu ' + str(data.cpu),  #name
+        'ram':          sshserver + mother_script + ' ' + str(data.mother) + ' ram ' + str(data.ram),  #name
+        'os': sshserver + mother_script + ' ' + str(data.mother) + ' cpu ' + str(data.os),  #name
+        'qr':       sshserver + mother_script + ' ' + str(data.mother) + ' qr_code ' + str(data.qr_code),  #name
+        'purchase': sshserver + mother_script + ' ' + str(data.mother) + ' purchase_date ' + str(data.purchase_date),  #name
+        'sn': sshserver + mother_script + ' ' + str(data.mother) + ' serial_number ' + str(data.serial_number),  #name
+        'rack': sshserver + mother_script + ' ' + str(data.mother) + ' rack ' + str(data.rack),  #name
+        'rack_pos': sshserver + mother_script + ' ' + str(data.mother) + ' rack_position ' + str(data.rack_position),  #name
+        'maintainer': sshserver + mother_script + ' ' + str(data.mother) + ' maintainer ' + str(data.maintainer),  #name
+        'switch_port': sshserver + mother_script + ' ' + str(data.mother) + ' switch_port ' + str(data.switch_port),  #name
+#        'notes': sshserver + mother_script + ' ' + str(data.mother) + ' notes ' + str(data.notes),  #name
+#        'mg_m': sshserver + mother_script + ' ' + str(data.mother) + ' mgmt_mac ' + str(data.mgmt_mac),  #name
+#        'mg_p': sshserver + mother_script + ' ' + str(data.mother) + ' mgmt_port ' + str(data.mgmt_port),  #name
+#        'mg_v': sshserver + mother_script + ' ' + str(data.mother) + ' mgtm_vlan ' + str(data.mgmt_vlan),  #name
+#        'name': sshserver + mother_script + ' ' + str(data.mother) + ' name ' + str(data.name),  #name
+#        'e_m': sshserver + mother_script + ' ' + str(data.mother) + ' eth_mac ' + str(data.eth_mac),  #name
+#        'e_p': sshserver + mother_script + ' ' + str(data.mother) + ' eth_port ' + str(data.eth_port),  #name
+#        'e_v': sshserver + mother_script + ' ' + str(data.mother) + ' eth_vlan' + str(data.eth_vlan),  #name
+#        'e1': sshserver + mother_script + ' ' + str(data.mother) + ' e1_mac ' + str(data.e1_mac),  #name
+#        'e2': sshserver + mother_script + ' ' + str(data.mother) + ' e2_mac ' + str(data.e2_mac),  #name
+#        'e3': sshserver + mother_script + ' ' + str(data.mother) + ' e3_mac ' + str(data.e3_mac),  #name
+#        'sw': sshserver + mother_script + ' ' + str(data.mother) + ' sw_name ' + str(data.sw_name),  #name
+#        'sw_p': sshserver + mother_script + ' ' + str(data.mother) + ' sw_port ' + str(data.sw_port),  #name
+#        'sw_v': sshserver + mother_script + ' ' + str(data.mother) + ' sw_vlan ' + str(data.sw_vlan),  #name
+#        'sw_d': sshserver + mother_script + ' ' + str(data.mother) + ' sw_desc ' + str(data.sw_desc),  #name
+    }
 
-        # RESULT AND DO
-        if ENV == 'PREPRO':
-            cmd = 'ssh root@10.20.100.133 ' + mother_script + ' ' + str(server) + ' ' + str(stype) + ' ' + str(svalue)
-        elif ENV == 'PROD':            
-            cmd = 'ssh root@mother.cent ' + mother_script + ' ' + str(server) + ' ' + str(stype) + ' ' + str(svalue)
+    # A. MOTHER REMOTE UPDATE     
+    printx(f'Zpracovavam Server: {data.mother}','y')
+    print('MOTHER CMDS')
+    for cmd in MOTHER_CMDS.values():
         print(cmd)
         #runcmd(cmd)
+    
+    # B. SWITCH UPDATE
+    #switch_info(data)
 
 
 def get_input(test):
@@ -401,42 +308,35 @@ def runcmd(cmd):
     #print(f'{err}') # err nic nevypisuje
 
 
-def switch_info(vstup):
+def switch_info(data):
     # nactu parametry z motheru
-    if 'mother' in vstup:
-        info = mother_info(vstup)
-    else:
-        info = vstup
+#    if 'mother' in vstup:
+#        info = mother_info(vstup)
+#    else:
+#        info = vstup
     printx('# SWITCH INFO ##################################################','b')
-    try:
-        name = info.split(';')[0].lower()
-        port = info.split(';')[1]
-        vlan = info.split(';')[2]
-        #print(f'{name},{port},{vlan}')
-    except Error as err:
-        print(f'Error: {err}')
+    print(f'ZADANO - switch: {data.sw_name}, port: {data.sw_port}, vlan: {data.sw_vlan}, desc: {data.sw_desc}\n')
+    ss = sw.Switch(data.sw_name, sw.switches[data.sw_name], data.sw_port)
+    sw_output = ss.get_config('check', data.sw_port)
+    #print(sw_output)
+    if sw_check_config_state(sw_output):
+        print('START - sw_config()')
     else:
-        print(f'ZADANO - switch: {name}, port: {port}\n')
-        ss = sw.Switch(name, sw.switches[name], port)
-        sw_output = ss.get_config('check', port)
-        #print(sw_output)
-        if sw_check_config_state(sw_output):
-            print('START - sw_config()')
-        else:
-            print('STOP - je nutne zkontrolovat nastaveni na SW')
+        print('STOP - je nutne zkontrolovat nastaveni na SW')
 
 def sw_check_config_state(data):
+  #  print(data)
     print('HERE')
-#    if data['GE1-UP'] is not data['GE2-UP'] is not data['BAGG-UP']:
-#        print('ALL PORTS is DOWN.')
-#        print('RUN SW CONFIG')
-#        return True
-#    elif data['GE1-MAC'] and data['GE2-MAC'] and data['BAGG-MAC']:
-#        print('NO MAC ADDRESSES')
-#        print('RUN SW CONFIG')
-#        return True
-#    else:
-#        return False
+    if not data['GE1-UP'] and not data['GE2-UP'] and not data['BAGG-UP']:
+        print('ALL PORTS is DOWN.')
+        print('RUN SW CONFIG')
+        return True
+    elif data['GE1-MAC'] and data['GE2-MAC'] and data['BAGG-MAC']:
+        print('NO MAC ADDRESSES')
+        print('RUN SW CONFIG')
+        return True
+    else:
+        return False
     
     
     
@@ -497,21 +397,21 @@ def switch_update_auto(vstup):
         
 def init():
     global DEBUG, ENV
-    DEBUG = False
     # PROSTREDI - PROD / PREPRO
+    DEBUG = False
     ENV = 'PREPRO'
-#    dev = Device()
     os.system('clear')
     printx(f'# MYADMIN {__version__} #', 'g')
-    if DEBUG:
-        printx('DEBUGGING: ON','r')
+    printx(f'----------------', 'g')
+    printx(f'# ENVIRONMENT: {ENV}', 'y')
+    printx(f'# DEBUGGING: {DEBUG}','y')
 
 # MAIN
 def main():
     # Zakladni nastaveni a debug on/off 
     init()
     # Vyhodnoceni vstupnich parametry
-    test = ['a-server4']
+    test = ['a-server4'] # DEBUG
     vstup = get_input(test)
     # Informace o zadanem serveru z motheru
     #print(len(sys.argv))
@@ -533,7 +433,9 @@ def main():
             switch_update_auto(vstup)
         elif vstup.f != None:
             #import_csv(vstup.f)
-            new_way(vstup.f)
+            #new_way(vstup.f)
+            import_auto(vstup.f)
+            
         else:
             printx('Chybne zadano, pravdepodobne jste nezadal vsechny pozadovane parametry!','r')
         # Informace o nastaveni switchi pro dany port

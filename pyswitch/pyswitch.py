@@ -153,10 +153,10 @@ class Switch():
             elif k == 6:
                 RESULT['BAGG-MAC'] = False if v.count('No mac address found') ==1 else True
             elif k == 7:
-                if v.count('GE1/0/' + port + '         S') == 1 and v.count('GE2/0/' + port + '         S'):
+                if v.count('GE1/0/' + port + '          S') == 1 and v.count('GE2/0/' + port + '          S'):
                     a = 'JE TAM SS'
                 else:
-                    a = 'NENI TAK SS'
+                    a = 'NENI TAM SS'
                 RESULT['BAGG-VERB'] = a
             elif k == 8:
                 a = 'loopback: yes' if v.count('loopback') == 1 else 'loopback: no'
@@ -175,8 +175,8 @@ class Switch():
                 b =  ''
                 res = (a, b)
                 RESULT['BAGG-CONF'] = res
-        print(RESULT)
-        #return RESULT
+        #print(RESULT)
+        return RESULT
     
     def set_desc(self, cmd):
         self.sw_connect()
@@ -192,7 +192,7 @@ class Switch():
             Switch.OUTPUT[k] = data
             print(f'{Fore.BLUE}{data}{Style.RESET_ALL}')
         self.sw_disconnect()    
-        self.check_config(Switch.OUTPUT, port)
+        return self.check_config(Switch.OUTPUT, port)
         #self.check_config(Switch.OUTPUT, port)
 
     def set_config_old(self, note):

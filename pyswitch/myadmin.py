@@ -3,7 +3,7 @@
 
 
 __app__ = 'MyAdmin'
-__version__ = "1.30"
+__version__ = "1.41"
 __author__ = "Iceman"
 __copyright__ = "Copyright 2021"
 __license__ = "GPL"
@@ -33,12 +33,16 @@ sshserver = ''
 
 def printx(text, c):
     if c == 'b':
+        # info
         colour = 'blue'
     elif c == 'y':
+        # variable show
         colour = 'yellow'
     elif c == 'g':
+        # notes
         colour = 'green'
     elif c == 'r':
+        # error
         colour = 'red'
     else:
         colour = 'white'
@@ -61,14 +65,14 @@ def counter(csv_file):
     params = len(f.readlines())
     g = open(csv_file, 'r')
     servers = len((g.readline()).split(','))
-    printx(f'INFO: Vstupni soubor obsahuje: {servers} serveru | {params} parametru.', 'b')
+    printx(f'INFO: CSV PARSER - Input file: {servers} servers | {params} params.', 'b')
     return servers
 
 def import_auto(csv_file):
     # AUTOCOUNT - mozne zadat rucne
     servers = counter(csv_file)
     dict = {}
-    for s in range(1, servers):
+    for s in range(0, servers):
         with open(csv_file) as f:
             reader = csv.reader(f)
             dict = {rows[0]:rows[s] for rows in reader}
@@ -84,7 +88,7 @@ def check_empty(data):
     for attr, value in data.__dict__.items():
         #print(f'{attr},{value}')
         if value == '' or value == None or value is None:
-            printx(f'Promenna {attr} ma prazdnou hodnotu {value}.','r') 
+            printx(f'- Promenna {attr} ma prazdnou hodnotu {value}.','r') 
             OK.append(0)
     return True if 0 in OK else False
         
@@ -92,22 +96,29 @@ def check_empty(data):
 def prepare_data(data):
 #    print(data)
 #   CHECK VALUES
+    # KDYZ TESTUJI CI NACITAM HODNOTU Z DB REMOTELY
+    DB_OFF = True
     ok = check_empty(data)
     if ok:
-        printx('Ukoncuji zpracovani - soubor obsahuje nedoplnene hodnoty!','r')
-        #exit(0)
+        printx('CSV PARSER: V souboru jsou promenne, ktere nemaji definovou hodnotu - UKONCUJI BEH ZPRACOVANI.','r')
+        if MOTHER_RUN == False:
+            exit(0)
     else:
         try:
-            pom = db.session.query(db.Project).filter(db.Project.name == data.project).first()
-            data.project = pom.id
-            pom = db.session.query(db.Type).filter(db.Type.name == data.type).first()
-            data.type = pom.id 
-            pom = db.session.query(db.State).filter(db.State.name == data.state).first()
-            data.state = pom.id
-            pom = db.session.query(db.Rack).filter(db.Rack.name == data.rack).first()
-            data.rack = pom.id
-            usr = db.session.query(db.User).filter(db.User.username == data.maintainer).first()
-            data.maintainer = usr.id 
+            if DB_OFF:
+                # TODO: nova polozka - server_type ( zasae na dotaz)
+                pom = db.session.query(db.ServerType).filter(db.ServerType.name == 'a2hosting').first()
+                data.server_type = pom.id
+                pom = db.session.query(db.Project).filter(db.Project.name == data.project).first()
+                data.project = pom.id
+                pom = db.session.query(db.Type).filter(db.Type.name == data.type).first()
+                data.type = pom.id 
+                pom = db.session.query(db.State).filter(db.State.name == data.state).first()
+                data.state = pom.id
+                pom = db.session.query(db.Rack).filter(db.Rack.name == data.rack).first()
+                data.rack = pom.id
+                usr = db.session.query(db.User).filter(db.User.username == data.maintainer).first()
+                data.maintainer = usr.id
         except AttributeError as err:
             print(f'ERR: Chyba cteni z DB {err}')
         else:
@@ -138,10 +149,26 @@ def prepare_data(data):
         sshserver = 'ssh root@mother.cent ' 
         mother_script = '/usr/share/pyshared/mother/networking/interfaces_update.py' 
     
+    # QUERY TO MOTHER SERVER
+    TEST = False
+    if TEST:
+        #cmd = sshserver + mother_script + ' ' + str(data.mother) + ' query project ' + str(data.project)
+        #cmd = sshserver + mother_script + ' ' + str(data.mother) + ' query type ' + str(data.type)
+        #cmd = sshserver + mother_script + ' ' + str(data.mother) + ' query maintainer ' + str(data.maintainer)
+        cmd = sshserver + mother_script + ' ' + str(data.mother) + ' query state ' + f'"{str(data.state)}"'
+        
+        print(cmd)
+        runcmd(cmd)  
+    
     MOTHER_CMDS = {
-        'project':  sshserver + mother_script + ' ' + str(data.mother) + ' project_id ' + str(data.project),  #name
+        # nutne prevest na ID
+        'project':  sshserver + mother_script + ' ' + str(data.mother) + ' project ' + str(data.project),  #name
+        # nutne prevest na ID
         'type':     sshserver + mother_script + ' ' + str(data.mother) + ' type ' + str(data.type),  #name
+        # nutne prevest na ID
+        'server_type':   sshserver + mother_script + ' ' + str(data.mother) + ' server_type ' + str(data.server_type),  #name
         'inventory':sshserver + mother_script + ' ' + str(data.mother) + ' inventory ' + str(data.inventory),  #name
+        # nutne prevest na ID
         'state':    sshserver + mother_script + ' ' + str(data.mother) + ' state ' + str(data.state),  #name
         'cpu':      sshserver + mother_script + ' ' + str(data.mother) + ' cpu ' + str(data.cpu),  #name
         'ram':          sshserver + mother_script + ' ' + str(data.mother) + ' ram ' + str(data.ram),  #name
@@ -149,11 +176,13 @@ def prepare_data(data):
         'qr':       sshserver + mother_script + ' ' + str(data.mother) + ' qr_code ' + str(data.qr_code),  #name
         'purchase': sshserver + mother_script + ' ' + str(data.mother) + ' purchase_date ' + str(data.purchase_date),  #name
         'sn': sshserver + mother_script + ' ' + str(data.mother) + ' serial_number ' + str(data.serial_number),  #name
+        # NUTNE PREVEST na ID
         'rack': sshserver + mother_script + ' ' + str(data.mother) + ' rack ' + str(data.rack),  #name
         'rack_pos': sshserver + mother_script + ' ' + str(data.mother) + ' rack_position ' + str(data.rack_position),  #name
+        # NUTNE prevest na ID
         'maintainer': sshserver + mother_script + ' ' + str(data.mother) + ' maintainer ' + str(data.maintainer),  #name
         'switch_port': sshserver + mother_script + ' ' + str(data.mother) + ' switch_port ' + str(data.switch_port),  #name
-#        'notes': sshserver + mother_script + ' ' + str(data.mother) + ' notes ' + str(data.notes),  #name
+        'notes': sshserver + mother_script + ' ' + str(data.mother) + ' notes ' + str(data.notes),  #name
 #        'mg_m': sshserver + mother_script + ' ' + str(data.mother) + ' mgmt_mac ' + str(data.mgmt_mac),  #name
 #        'mg_p': sshserver + mother_script + ' ' + str(data.mother) + ' mgmt_port ' + str(data.mgmt_port),  #name
 #        'mg_v': sshserver + mother_script + ' ' + str(data.mother) + ' mgtm_vlan ' + str(data.mgmt_vlan),  #name
@@ -171,49 +200,34 @@ def prepare_data(data):
     }
 
     # A. MOTHER REMOTE UPDATE     
-    printx(f'Zpracovavam Server: {data.mother}','y')
-    print('MOTHER CMDS')
+    printx(f'INFO: MOTHER CMD - Processing Server: {data.mother}','b')
     for cmd in MOTHER_CMDS.values():
         print(cmd)
-        #runcmd(cmd)
+        if MOTHER_RUN:
+            #runcmd(cmd)
+            pass
     
     # B. SWITCH UPDATE
-    #switch_info(data)
+    if SWITCH_RUN:
+        switch_info_auto(data)
 
-
-def get_input(test):
-    ''' Parser na vstupni parametry '''
-
-    # Required positional argument
-    parser = argparse.ArgumentParser(description='Popis pouziti utility:')
-    parser.add_argument('server', nargs='?', help='Server hostname - [gmnXXXX]')
-    # Optional
-    parser.add_argument('-i', nargs='?', help='Information about server - [mother or switch]')
-    parser.add_argument('-um', nargs='?', help='Update mother parameters - [cpu / ram / os / inventory / helios / qr / age / sn / port], usage: [cpu,8].')
-    parser.add_argument('-us', nargs='?', help='Update switch configuration\n[AB13.TTC,45,1600,"Server gmnXXXX"]')
-    parser.add_argument('-ua', nargs='?', help='Automatic update switch configuration\n[gmnXXXX"]')
-    parser.add_argument('-f', nargs='?', help='Import csv config file and automatic update mother parameters and switch configuration - [file_name]')
-    if DEBUG:
-        args = parser.parse_args(test)
-        print(args)
-    else:
-        args = parser.parse_args()
-    if args.us != None:
-        args.us = str(args.us).lower()
-    if DEBUG:
-        print(f'Vsechny vstupni parametry: {args}\n')
-    return args
 
 def mother_info(vstup):
-    server = vstup.ua
+    server = vstup.server
     if vstup.i == 'mother' or vstup.ua != '':
-        printx('# MOTHER INFO ##################################################','y')
+        printx('# MOTHER INFO (DB: {MOTHER_DB}) #########\n','b')
     try: 
+        #print(server)
         srv = db.session.query(db.Machine).filter(db.Machine.name == server).first()
-        subnet = db.session.query(db.Subnet).join(db.Interface).join(db.Machine).filter(db.Machine.name == server).first()
-        vlan = db.session.query(db.Vlan).filter(db.Vlan.id == subnet.vlan_id).first()
-        typ = db.session.query(db.Type).filter(db.Type.id == srv.type_id).first()
+        #print(srv.id)
         int = db.session.query(db.Interface).filter(db.Interface.machine_id == srv.id).first()
+        #print(int.subnet_id) 
+        subnet = db.session.query(db.Subnet).filter(db.Subnet.id == int.subnet_id).first()
+        #print(subnet.vlan_id)
+        vlan = db.session.query(db.Vlan).filter(db.Vlan.id == subnet.vlan_id).first()
+        #print(vlan.name)
+        typ = db.session.query(db.Type).filter(db.Type.id == srv.type_id).first()
+        #print(srv.rack_id)
         ra = db.session.query(db.Rack).filter(db.Rack.id == srv.rack_id).first() 
         try:
             ip = round((int.ip))
@@ -231,23 +245,27 @@ def mother_info(vstup):
             print(f'MAC: {int.mac},IP ADDR: {ipv}')
             print(f'RACK: {ra.name}')
     except AttributeError as err:
-        printx(f'Server {server} pravdepodobne neexistuje!','r')
+        printx(f'ERR: Server {server} doesnt exist!','r')
         if DEBUG:
             print(f'---> Error: {err}')
         exit(0)
     else:
         if vstup.i == 'mother':
-            print(f'\
-            \nSERVER:\t\t{srv.name}\nMODEL:\t\t{typ.name}\nQR CODE:\t{QR}\
-            \nRACK:\t\t{ra.name}\nSWITCH:\t\t{switch}\nPORT\t\t{int.port}\
-            \nMAC ADDR:\t{int.mac}\nIP ADDR:\t{ipv} (primary)\
-            \nVLAN NAME:\t{vlan.name}\nVLAN:\t\t{vlan.id_vlan}\n\
-            ')
-        if vstup.ua != '':
-            #if 'gmn' in server:
-            #    vlan = swi.split('.')[1].lower()
-            info = switch + ',' + str(int.port) + ',' + str(vlan.id_vlan)
-            return info
+            OUTPUT = {
+                'SERVER:': srv.name,
+                'MODEL:': typ.name,
+                'QR CODE:': QR,
+                'RACK': ra.name,
+                'SW_NAME:': switch,
+                'SW_PORT:': int.port,
+                'MAC_ADDR:': int.mac,
+                'IP_ADDR': ipv,
+                'VLAN_NAME': vlan.name,
+                'VLAN:': vlan.id_vlan
+            }
+            for k, v in OUTPUT.items():
+                print('{0:10}\t{1}'.format(k, v))
+
 
 def mother_update_manual(vstup):
     if DEBUG:
@@ -271,7 +289,11 @@ def mother_update_manual(vstup):
         if DEBUG:
             print(f'SSH COMMAND: {cmd}')
         printx(f'\nMother updating parameters ...\n','y')
-        #runcmd(cmd)
+        if MOTHER:
+            print('WRITE: ON')
+            #runcmd(cmd)
+        else:
+            print('WRITE: OFF')
         
 
 def get_sw_info(vstup, cmd):
@@ -302,13 +324,33 @@ def runcmd(cmd):
             stdout=sub.PIPE, stderr=sub.STDOUT)
     output,stderr = process.communicate()
     status = process.poll()
+    out = output
     out = output.decode('utf-8').split('.')[0] # item from list
+    out = out.strip()
     err = stderr
-    print(f'{status}, {out}')
+    # status - 0 ok, 1 fail
+    print(f'{out}')
     #print(f'{err}') # err nic nevypisuje
 
 
 def switch_info(data):
+    # nactu parametry z motheru
+#    if 'mother' in vstup:
+#        info = mother_info(vstup)
+#    else:
+#        info = vstup
+    printx('# SWITCH INFO ##################################################','b')
+    print(f'ZADANO - switch: {data.sw_name}, port: {data.sw_port}, vlan: {data.sw_vlan}, desc: {data.sw_desc}\n')
+    ss = sw.Switch(data.sw_name, sw.switches[data.sw_name], data.sw_port)
+    sw_output = ss.get_config('check', data.sw_port)
+    #print(sw_output)
+    if sw_check_config_state(sw_output):
+        print('START - sw_config()')
+    else:
+        print('STOP - je nutne zkontrolovat nastaveni na SW')
+
+
+def switch_info_auto(data):
     # nactu parametry z motheru
 #    if 'mother' in vstup:
 #        info = mother_info(vstup)
@@ -337,7 +379,6 @@ def sw_check_config_state(data):
         return True
     else:
         return False
-    
     
     
 def switch_update_manual(vstup):
@@ -394,17 +435,49 @@ def switch_update_auto(vstup):
         cmds.append(cmd3)
         set_sw_desc(vstup, cmds)
         printx('################################################################','b')
-        
+
+
+def get_input(test):
+    ''' Parser na vstupni parametry '''
+
+    # Required positional argument
+    parser = argparse.ArgumentParser(description='Popis pouziti utility:')
+    parser.add_argument('server', nargs='?', help='Server hostname - [gmnXXXX]')
+    # Optional
+    parser.add_argument('-i', nargs='?', help='Information about server - [mother or switch]')
+    parser.add_argument('-um', nargs='?', help='Update mother parameters - [cpu / ram / os / inventory / helios / qr / age / sn / port], usage: [cpu,8].')
+    parser.add_argument('-us', nargs='?', help='Update switch configuration\n[AB13.TTC,45,1600,"Server gmnXXXX"]')
+    parser.add_argument('-ua', nargs='?', help='Automatic update switch configuration\n[gmnXXXX"]')
+    parser.add_argument('-f', nargs='?', help='Import csv config file and automatic update mother parameters and switch configuration - [file_name]')
+    if DEBUG:
+        args = parser.parse_args(test)
+        print(args)
+    else:
+        args = parser.parse_args()
+    if args.us != None:
+        args.us = str(args.us).lower()
+    if DEBUG:
+        print(f'Vsechny vstupni parametry: {args}\n')
+    return args      
+
+    
 def init():
-    global DEBUG, ENV
+    global DEBUG, ENV, MOTHER_RUN, SWITCH_RUN, MOTHER_DB
     # PROSTREDI - PROD / PREPRO
     DEBUG = False
     ENV = 'PREPRO'
+    MOTHER_RUN = False
+    SWITCH_RUN = False
+    MOTHER_DB = 'LOCAL'
     os.system('clear')
     printx(f'# MYADMIN {__version__} #', 'g')
     printx(f'----------------', 'g')
-    printx(f'# ENVIRONMENT: {ENV}', 'y')
-    printx(f'# DEBUGGING: {DEBUG}','y')
+    printx(f'# ENVIRONMENT:\t\t{ENV}', 'y')
+    printx(f'# MOTHER DB:\t\t{MOTHER_DB}', 'y')
+    printx(f'# MOTHER RUN UPDATE:\t{MOTHER_RUN}', 'y')
+    printx(f'# SWITCH RUN UPDATE:\t{SWITCH_RUN}', 'y')
+    printx(f'# DEBUG:\t\t{DEBUG}','y')
+    printx(f'-----------------------------','y')
 
 # MAIN
 def main():
@@ -413,7 +486,7 @@ def main():
     # Vyhodnoceni vstupnich parametry
     test = ['a-server4'] # DEBUG
     vstup = get_input(test)
-    # Informace o zadanem serveru z motheru
+    # Informace o zadanem serveru z mother
     #print(len(sys.argv))
     if len(sys.argv) > 2:
         if vstup.i != None:

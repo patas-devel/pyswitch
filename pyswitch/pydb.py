@@ -185,6 +185,17 @@ class Nagiosgroup(Base):
     description = Column(VARCHAR(128))
     type = Column(VARCHAR(32))
     
+class Server(Base):
+    __tablename__ = 'groups_servertype'
+    id = Column(Integer, primary_key=True)
+    name = Column(VARCHAR(64))
+    server_group_ud = Column(Integer)
+
+class Group(Base):
+    __tablename__ = 'groups_servergroup'
+    id = Column(Integer, primary_key=True)
+    name = Column(VARCHAR(64))
+    
 # MAIN - TESTING 
 #os.system('clear')
 #server_name = 'vmadb1'

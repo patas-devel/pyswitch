@@ -76,7 +76,7 @@ class Machine(Base):
     __tablename__ = 'machines_machine'
     id = Column(Integer, primary_key=True)
     name = Column(String(128))
-    server_type_id = Column(Integer)
+    server_type_id = Column(Integer), ForeignKey('groups_servertype.id', nulllable=False)
     cpu = Column(Integer)
     ram = Column(Integer)
     os = Column(String(4))
@@ -185,13 +185,14 @@ class Nagiosgroup(Base):
     description = Column(VARCHAR(128))
     type = Column(VARCHAR(32))
     
-class Server(Base):
+class ServerType(Base):
     __tablename__ = 'groups_servertype'
     id = Column(Integer, primary_key=True)
     name = Column(VARCHAR(64))
-    server_group_ud = Column(Integer)
+    server_group_id = Column(Integer, ForeignKey('groups_servegroup'), nullable=False)
+    
 
-class Group(Base):
+class GroupServer(Base):
     __tablename__ = 'groups_servergroup'
     id = Column(Integer, primary_key=True)
     name = Column(VARCHAR(64))

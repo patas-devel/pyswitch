@@ -85,17 +85,17 @@ class Machine(Base):
     HeliosID = Column(String(10))
     qr_code = Column(Integer)
     purchase_date = Column(Date)
-    type_id = Column(Integer)
+    type_id = Column(Integer), ForeignKey('machines_machinetype.id', nullable=False)
     serial_number = Column(String(128))
-    rack_id = Column(Integer)
+    rack_id = Column(Integer), ForeignKey('machines_rack.id', nulllable=False)
     rack_position = Column(Integer)
-    maintainer_id = Column(Integer)
+    maintainer_id = Column(Integer), ForeignKey('auth_user.id', nulllable=False)
     notes = Column(String(128))
     snmp_community = Column(String(32))
-    nagios_system_id = Column(Integer)
+    nagios_system_id = Column(Integer), ForeignKey('nagios_nagiossystem.id', nulllable=False)
     spc = Column(String(32))
     switch_port = Column(String(32))
-    state_id = Column(Integer)
+    state_id = Column(Integer), ForeignKey('machines_machinestate.id', nulllable=False)
     site_id = Column(Integer)
 
 class Group(Base):
@@ -184,13 +184,17 @@ class Nagiosgroup(Base):
     name = Column(VARCHAR(128))
     description = Column(VARCHAR(128))
     type = Column(VARCHAR(32))
-    
+
+class NagiosSystem(Base):
+    __tablename__ = 'nagios_nagiossystem'
+    id = Column(Integer, primary_key=True)
+    name = Column(VARCHAR(128))
+       
 class ServerType(Base):
     __tablename__ = 'groups_servertype'
     id = Column(Integer, primary_key=True)
     name = Column(VARCHAR(64))
     server_group_id = Column(Integer, ForeignKey('groups_servegroup'), nullable=False)
-    
 
 class GroupServer(Base):
     __tablename__ = 'groups_servergroup'

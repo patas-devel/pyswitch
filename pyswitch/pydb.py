@@ -76,7 +76,7 @@ class Machine(Base):
     __tablename__ = 'machines_machine'
     id = Column(Integer, primary_key=True)
     name = Column(String(128))
-    server_type_id = Column(Integer), ForeignKey('groups_servertype.id', nulllable=False)
+    server_type_id = Column(Integer, ForeignKey('groups_servergroup.id'))
     cpu = Column(Integer)
     ram = Column(Integer)
     os = Column(String(4))
@@ -85,17 +85,17 @@ class Machine(Base):
     HeliosID = Column(String(10))
     qr_code = Column(Integer)
     purchase_date = Column(Date)
-    type_id = Column(Integer), ForeignKey('machines_machinetype.id', nullable=False)
+    type_id = Column(Integer, ForeignKey('machines_machinetype.id'))
     serial_number = Column(String(128))
-    rack_id = Column(Integer), ForeignKey('machines_rack.id', nulllable=False)
+    rack_id = Column(Integer, ForeignKey('machines_rack.id'))
     rack_position = Column(Integer)
-    maintainer_id = Column(Integer), ForeignKey('auth_user.id', nulllable=False)
+    maintainer_id = Column(Integer, ForeignKey('auth_user.id'))
     notes = Column(String(128))
     snmp_community = Column(String(32))
-    nagios_system_id = Column(Integer), ForeignKey('nagios_nagiossystem.id', nulllable=False)
+    nagios_system_id = Column(Integer, ForeignKey('nagios_nagiossystem.id'))
     spc = Column(String(32))
     switch_port = Column(String(32))
-    state_id = Column(Integer), ForeignKey('machines_machinestate.id', nulllable=False)
+    state_id = Column(Integer, ForeignKey('machines_machinestate.id'))
     site_id = Column(Integer)
 
 class Group(Base):
@@ -150,8 +150,10 @@ class Interface(Base):
     __tablename__ = 'networking_interface'
     id = Column(Integer, primary_key=True)
     ip = Column(DECIMAL(39,0))
-    subnet_id = Column(Integer, ForeignKey('networking_subnet.id'), nullable=False)
-    machine_id = Column(Integer, ForeignKey('machines_machine.id'), nullable=False)
+#    subnet_id = Column(Integer, ForeignKey('networking_subnet.id'), nullable=False)
+
+    subnet_id = Column(Integer)
+    machine_id = Column(Integer)
     type = Column(VARCHAR(32))
     mac = Column(VARCHAR(17)) 
     is_primary = Column(Integer)
@@ -162,7 +164,7 @@ class Subnet(Base):
     __tablename__ = 'networking_subnet'
     id = Column(Integer, primary_key=True)
     ip = Column(DECIMAL(39,0))
-    vlan_id = Column(Integer)
+    vlan_id = Column(Integer, ForeignKey('networking_vlan'))
     prefix = Column(Integer)
     default_gw_mac = Column(VARCHAR(17))
     dhcp_template = Column(VARCHAR(128))
@@ -194,7 +196,7 @@ class ServerType(Base):
     __tablename__ = 'groups_servertype'
     id = Column(Integer, primary_key=True)
     name = Column(VARCHAR(64))
-    server_group_id = Column(Integer, ForeignKey('groups_servegroup'), nullable=False)
+    server_group_id = Column(Integer, ForeignKey('groups_servergroup'))
 
 class GroupServer(Base):
     __tablename__ = 'groups_servergroup'

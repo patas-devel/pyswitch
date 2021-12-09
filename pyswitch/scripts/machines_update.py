@@ -18,7 +18,7 @@ from mother.base import BaseModel
 #print(Machine._meta.get_all_field_names())
 
 # VARS
-LOG_FILE = '/root/mother/mother/machines/machines.log'
+LOG_FILE = './machines.log'
 
 # FUNC
 def server_create():
@@ -124,7 +124,6 @@ def server_update(vstup):
 		try:
 	                value2 = vstup[4]
         	        data_in = 'Vstupy: ' + str(server) + ',' + str(stype) + ',' + str(value) + ',' + str(value2)
-			s = Machine.objects.filter(name=server).get()
 		except Exception, e:
 			print('Server pravdepodobne neexistuje - Error: ' + str(e))
 		if value == 'project':
@@ -134,7 +133,7 @@ def server_update(vstup):
 			print('machine_id:' + str(s.id))
 		elif value == 'server_type':
 			sr = ServerType.objects.filter(name=value2).get()
-			print('server_type_id:' + str(sr.id)) 
+			print('server_type_id:' + str(sr.id))
 		elif value == 'maintainer':
 			u = User.objects.filter(username=value2).get()
 	                print('maintainer_id:' + str(u.id))
@@ -153,7 +152,7 @@ def server_update(vstup):
 
         else:
                 pass
-	
+
 
 def user_add():
 	pass

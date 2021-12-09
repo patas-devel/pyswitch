@@ -9,7 +9,11 @@ sys.path.append('/root/mother/')
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mother.settings")
 
 from django.db import models
-from  mother.machines.models import Machine
+from  mother.machines.models import Machine, MachineProject, MachineType, MachineState, Rack
+from mother.networking.models import Interface
+from mother.groups.models import ServerType
+from django.contrib.auth.models import User
+from mother.base import BaseModel
 
 #print(Machine._meta.get_all_field_names())
 
@@ -21,16 +25,28 @@ def server_create():
 	##m = Machine.objects.create(name='a-server6', serial_number='ABCEFGHIJK', project_id_id=1, inventory='testovaci6', cpu=4, ram=16, os='d10', HeliosID='123123', qr_code='12312346', type_id=132, state_id=1, site_id=1)
 	pass
 
+def decode_text(text):
+        base64_message = text
+        base64_bytes = base64_message.encode('ascii')
+        message_bytes = base64.b64decode(base64_bytes)
+        value = message_bytes.decode('ascii')
+	return value
+
+
 def server_update(vstup):
-	server = vstup[1]
-	stype = vstup[2]
-	value = vstup[3]
-	data_in = 'Vstupy: ' + str(server) + ',' + str(stype) + ',' + str(value)
-	print(data_in)
+	try:
+		server = vstup[1]
+		stype = vstup[2]
+		value = vstup[3]
+	except Error, e:
+		print('ERR: ' + str(e))
+        if stype != 'query':
+		data_in = 'Vstupy: ' + str(server) + ',' + str(stype) + ',' + str(value)
+		print(data_in)
 	if stype == 'cpu':
 		try:
 	        	Machine.objects.filter(name=server).update(cpu=value)
-		except Exception, e:
+		except UnboundLocalError, e:
 			print('ERR: ' + str(e))
 		else:
 			print('OK: Hodnota CPU uspesne aktualizovana.')
@@ -63,7 +79,7 @@ def server_update(vstup):
 	elif stype == 'maintainer':
 		try:
 		        Machine.objects.filter(name=server).update(maintainer=value)
-		except Exception, e:
+		except Error, e:
 			print('ERR: ' + str(e))
 		else:
 			print('OK: Maintainer byl aktualizovan.')
@@ -75,7 +91,7 @@ def server_update(vstup):
 	elif stype == 'name':
 		try:
 			Machine.objects.filter(name=server).update(name=value)
-		except Exception, e:
+		except Error, e:
 			print(e)
 		else:
 			print('OK: Server uspesne prejmenovan.')
@@ -94,18 +110,61 @@ def server_update(vstup):
 		else:
 			note_new = value
                 Machine.objects.filter(name=server).update(notes=note_new)
+      	elif stype == 'mgmt' or stype == 'eth' or stype == 'e1' or stype == 'e2' or stype == 'e3':
+#                print(value)
+                mac_addr = value.split('-')[0]
+                sw_port = value.split('-')[1]
+                try:
+                        Interface.objects.create(machine_id=server, type=stype, mac=mac_addr, port=sw_port)
+                except Error, e:
+                        print('ERR: Zaznam nebyl aktualizovan.' + str(e))
+                else:
+                        print('OK: Zaznam byl aktualizovan.')
+	elif stype == 'query':
+		try:
+	                value2 = vstup[4]
+        	        data_in = 'Vstupy: ' + str(server) + ',' + str(stype) + ',' + str(value) + ',' + str(value2)
+			s = Machine.objects.filter(name=server).get()
+		except Exception, e:
+			print('Server pravdepodobne neexistuje - Error: ' + str(e))
+		if value == 'project':
+			p = MachineProject.objects.filter(name=value2).get()
+			print('project_id:' + str(p.id))
+		elif value == 'machine':
+			print('machine_id:' + str(s.id))
+		elif value == 'server_type':
+			sr = ServerType.objects.filter(name=value2).get()
+			print('server_type_id:' + str(sr.id)) 
+		elif value == 'maintainer':
+			u = User.objects.filter(username=value2).get()
+	                print('maintainer_id:' + str(u.id))
+		elif value == 'type':
+			t = MachineType.objects.filter(name=value2).get()
+			print('type_id:' + str(t.id))
+		elif value == 'rack':
+			r = Rack.objects.filter(name=value2).get()
+			print('rack_id:' + str(r.id))
+		elif value == 'state':
+			value2 = decode_text(value2)
+			st = MachineState.objects.filter(name=value2).get()
+			print('state_id:' + str(st.id))
+
+
+
+        else:
+                pass
 	
 
 def user_add():
 	pass
     #m = Machine.objects.update(name=''
-    #from django.contrib.auth.models import User
     #user = User.objects.create_user('aaaa','aaaa@xyz.com','sn@pswrd')
     #user.save()
 
 
 # MAIN
-os.system('clear')
+#os.system('clear')
+os.environ['TERM'] = 'xterm-256color'
 try:
     vstup = sys.argv
 except:

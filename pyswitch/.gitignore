@@ -142,3 +142,4 @@ settings.ini
 switch.ini
 mother_db/*
 csv/*
+script/off/*

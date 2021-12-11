@@ -9,7 +9,7 @@ sys.path.append('/root/mother/')
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mother.settings")
 
 from django.db import models
-from  mother.machines.models import Machine, MachineProject, MachineType, MachineState, Rack
+from mother.machines.models import Machine, MachineProject, MachineType, MachineState, Rack, MachineGroup, MachineGroup_Machines
 from mother.networking.models import Interface
 from mother.groups.models import ServerType
 from django.contrib.auth.models import User
@@ -117,11 +117,21 @@ def server_update(vstup):
 			print('ERR: ' + str(e))
 		else:
 			print('OK: Maintainer was updated.')
-
 	elif stype == 'machinegroups':
-        	MachineGroup_machine.objects.filter(name=server).update(machinegroups=value)
+		s = Machine.objects.filter(name=server).get()
+		try:
+	        	MachineGroup_Machines.objects.create(machine_id=s.id, machinegroup_id=value)
+		except Exception, e:
+			print('ERR' + str(e))
+		else:
+			print('OK')
     	elif stype == 'switch_port':
-	        Machine.objects.filter(name=server).update(switch_port=value)
+		try:
+		        Machine.objects.filter(name=server).update(switch_port=value)
+		except Exception, e:
+			print('ERR')
+		else:
+			print('OK')
 	elif stype == 'name':
 		try:
 			Machine.objects.filter(name=server).update(name=value)
@@ -190,7 +200,7 @@ def server_update(vstup):
 			p = MachineProject.objects.filter(name=value2).get()
 			print('project_id:' + str(p.id))
 		elif value == 'machine':
-			s = Machine.objects.filter(name=server).filter(name=server).get()
+			s = Machine.objects.filter(name=server).get()
 			print('machine_id:' + str(s.id))
 		elif value == 'server_type':
 			sr = ServerType.objects.filter(name=value2).get()
@@ -208,6 +218,11 @@ def server_update(vstup):
 			value2 = decode_text(value2)
 			st = MachineState.objects.filter(name=value2).get()
 			print('state_id:' + str(st.id))
+		elif value == 'groups':
+			value2 = decode_text(value2)
+			s = Machine.objects.filter(name=server).get()
+			mg = MachineGroup.objects.filter(name=value2).get()
+			print('groups_id:' + str(mg.id))
         else:
             pass
 

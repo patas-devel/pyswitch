@@ -16,8 +16,12 @@ function push() {
         echo "Copy script to mother prepro"
         scp ./$SCRIPT root@10.20.100.133:$MOTHER_PREPRO_DIR/
         ;;
+      backup)
+        echo "Copy PREPRO script from SERVER to locale dir."
+        scp root@10.20.100.133:/root/mother/mother/machines/machines_update.py .
+        ;;
       *)
-        echo "Usage: $0 [prepro | prod] # pomocnik pro kopirovani scriptu do motheru prepro / prod"
+        echo "Usage: $0 [prepro | prod | backup] # pomocnik pro kopirovani scriptu do motheru prepro / prod nebo ze serveru here"
         ;;
   esac
 }

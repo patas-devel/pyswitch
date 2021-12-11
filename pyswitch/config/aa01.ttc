@@ -1,0 +1,187 @@
+# SWITCH INFO ##################################################
+ZADANO - switch: aa01.ttc, port: 14, vlan: 1318, desc: gmn1214
+
+Connecting to switch: aa01.ttc [10.33.240.11]
+
+display interface brief | incl GE1/0/14
+The brief information of interface(s) under bridge mode:
+Link: ADM - administratively down; Stby - standby
+Speed or Duplex: (a)/A - auto; H - half; F - full
+Type: A - access; T - trunk; H - hybrid
+Interface            Link Speed   Duplex Type PVID Description
+GE1/0/14             UP   1G(a)   F(a)   A    3
+
+display interface brief | incl GE2/0/14
+The brief information of interface(s) under bridge mode:
+Link: ADM - administratively down; Stby - standby
+Speed or Duplex: (a)/A - auto; H - half; F - full
+Type: A - access; T - trunk; H - hybrid
+Interface            Link Speed   Duplex Type PVID Description
+GE2/0/14             UP   1G(a)   F(a)   A    3
+
+display interface brief | incl BAGG14
+The brief information of interface(s) under bridge mode:
+Link: ADM - administratively down; Stby - standby
+Speed or Duplex: (a)/A - auto; H - half; F - full
+Type: A - access; T - trunk; H - hybrid
+Interface            Link Speed   Duplex Type PVID Description
+BAGG14               UP   1G(a)   F(a)   A    3
+
+display mac-address interface GigabitEthernet1/0/14
+MAC ADDR       VLAN ID  STATE          PORT INDEX               AGING TIME(s)
+
+  ---  No mac address found  ---
+
+display mac-address interface GigabitEthernet2/0/14
+MAC ADDR       VLAN ID  STATE          PORT INDEX               AGING TIME(s)
+
+  ---  No mac address found  ---
+
+display mac-address interface Bridge-Aggregation 14
+MAC ADDR       VLAN ID  STATE          PORT INDEX               AGING TIME(s)
+3473-5aa0-0b1c 3        Learned        Bridge-Aggregation14     AGING
+
+  ---  1 mac address(es) found  ---
+
+display link-aggregation verbose Bridge-Aggregation 14
+
+Loadsharing Type: Shar -- Loadsharing, NonS -- Non-Loadsharing
+Port Status: S -- Selected, U -- Unselected
+Flags:  A -- LACP_Activity, B -- LACP_Timeout, C -- Aggregation,
+        D -- Synchronization, E -- Collecting, F -- Distributing,
+        G -- Defaulted, H -- Expired
+
+Aggregation Interface: Bridge-Aggregation14
+Aggregation Mode: Dynamic
+Loadsharing Type: Shar
+System ID: 0x8000, b8af-67e7-2c15
+Local:
+  Port             Status  Priority Oper-Key  Flag
+--------------------------------------------------------------------------------
+  GE1/0/14         S       32768    16        {ACDEFG}
+  GE2/0/14         U       32768    16        {ACG}
+Remote:
+  Actor            Partner Priority Oper-Key  SystemID               Flag
+--------------------------------------------------------------------------------
+  GE1/0/14         0       32768    0         0x8000, 0000-0000-0000 {DEF}
+  GE2/0/14         0       32768    0         0x8000, 0000-0000-0000 {DEF}
+display current-configuration interface gi1/0/14
+#
+interface GigabitEthernet1/0/14
+ port access vlan 3
+ loopback-detection enable
+ broadcast-suppression 1
+ multicast-suppression 1
+ port link-aggregation group 14
+#
+return
+display current-configuration interface gi2/0/14
+#
+interface GigabitEthernet2/0/14
+ port access vlan 3
+ loopback-detection enable
+ broadcast-suppression 1
+ multicast-suppression 1
+ port link-aggregation group 14
+#
+return
+display current-configuration interface bridge-aggregation 14
+#
+interface Bridge-Aggregation14
+ port access vlan 3
+ link-aggregation mode dynamic
+#
+return
+
+# SWITCH INFO ##################################################
+ZADANO - switch: aa01.ttc, port: 13, vlan: 1318, desc: gmn1212
+
+Connecting to switch: aa01.ttc [10.33.240.11]
+
+display interface brief | incl GE1/0/13
+The brief information of interface(s) under bridge mode:
+Link: ADM - administratively down; Stby - standby
+Speed or Duplex: (a)/A - auto; H - half; F - full
+Type: A - access; T - trunk; H - hybrid
+Interface            Link Speed   Duplex Type PVID Description
+GE1/0/13             UP   1G(a)   F(a)   A    3
+
+display interface brief | incl GE2/0/13
+The brief information of interface(s) under bridge mode:
+Link: ADM - administratively down; Stby - standby
+Speed or Duplex: (a)/A - auto; H - half; F - full
+Type: A - access; T - trunk; H - hybrid
+Interface            Link Speed   Duplex Type PVID Description
+GE2/0/13             UP   1G(a)   F(a)   A    3
+
+display interface brief | incl BAGG13
+The brief information of interface(s) under bridge mode:
+Link: ADM - administratively down; Stby - standby
+Speed or Duplex: (a)/A - auto; H - half; F - full
+Type: A - access; T - trunk; H - hybrid
+Interface            Link Speed   Duplex Type PVID Description
+BAGG13               UP   1G(a)   F(a)   A    3
+
+display mac-address interface GigabitEthernet1/0/13
+MAC ADDR       VLAN ID  STATE          PORT INDEX               AGING TIME(s)
+
+  ---  No mac address found  ---
+
+display mac-address interface GigabitEthernet2/0/13
+MAC ADDR       VLAN ID  STATE          PORT INDEX               AGING TIME(s)
+
+  ---  No mac address found  ---
+
+display mac-address interface Bridge-Aggregation 13
+MAC ADDR       VLAN ID  STATE          PORT INDEX               AGING TIME(s)
+3473-5a9f-4548 3        Learned        Bridge-Aggregation13     AGING
+
+  ---  1 mac address(es) found  ---
+
+display link-aggregation verbose Bridge-Aggregation 13
+
+Loadsharing Type: Shar -- Loadsharing, NonS -- Non-Loadsharing
+Port Status: S -- Selected, U -- Unselected
+Flags:  A -- LACP_Activity, B -- LACP_Timeout, C -- Aggregation,
+        D -- Synchronization, E -- Collecting, F -- Distributing,
+        G -- Defaulted, H -- Expired
+
+Aggregation Interface: Bridge-Aggregation13
+Aggregation Mode: Dynamic
+Loadsharing Type: Shar
+System ID: 0x8000, b8af-67e7-2c15
+Local:
+  Port             Status  Priority Oper-Key  Flag
+--------------------------------------------------------------------------------
+  GE1/0/13         S       32768    26        {ACDEFG}
+  GE2/0/13         U       32768    26        {ACG}
+Remote:
+  Actor            Partner Priority Oper-Key  SystemID               Flag
+--------------------------------------------------------------------------------
+  GE1/0/13         0       32768    0         0x8000, 0000-0000-0000 {DEF}
+  GE2/0/13         0       32768    0         0x8000, 0000-0000-0000 {DEF}
+display current-configuration interface gi1/0/13
+#
+interface GigabitEthernet1/0/13
+ port access vlan 3
+ loopback-detection enable
+ broadcast-suppression 3
+ port link-aggregation group 13
+#
+return
+display current-configuration interface gi2/0/13
+#
+interface GigabitEthernet2/0/13
+ port access vlan 3
+ loopback-detection enable
+ broadcast-suppression 3
+ port link-aggregation group 13
+#
+return
+display current-configuration interface bridge-aggregation 13
+#
+interface Bridge-Aggregation13
+ port access vlan 3
+ link-aggregation mode dynamic
+#
+return

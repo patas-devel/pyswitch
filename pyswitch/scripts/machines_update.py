@@ -17,20 +17,17 @@ from mother.base import BaseModel
 
 #print(Machine._meta.get_all_field_names())
 
-# VARS
-LOG_FILE = './machines.log'
-
 # FUNC
 def server_create():
 	##m = Machine.objects.create(name='a-server6', serial_number='ABCEFGHIJK', project_id_id=1, inventory='testovaci6', cpu=4, ram=16, os='d10', HeliosID='123123', qr_code='12312346', type_id=132, state_id=1, site_id=1)
 	pass
 
 def decode_text(text):
-        base64_message = text
-        base64_bytes = base64_message.encode('ascii')
-        message_bytes = base64.b64decode(base64_bytes)
-        value = message_bytes.decode('ascii')
-	return value
+    base64_message = text
+    base64_bytes = base64_message.encode('ascii')
+    message_bytes = base64.b64decode(base64_bytes)
+    value = message_bytes.decode('ascii')
+    return value
 
 
 def server_update(vstup):
@@ -42,24 +39,56 @@ def server_update(vstup):
 		print('ERR: ' + str(e))
         if stype != 'query':
 		data_in = 'Vstupy: ' + str(server) + ',' + str(stype) + ',' + str(value)
-		print(data_in)
+		#print(data_in)
 	if stype == 'cpu':
 		try:
-	        	Machine.objects.filter(name=server).update(cpu=value)
+		       	Machine.objects.filter(name=server).update(cpu=value)
 		except UnboundLocalError, e:
 			print('ERR: ' + str(e))
 		else:
-			print('OK: Hodnota CPU uspesne aktualizovana.')
+			print('OK: CPU value was updated.')
         elif stype == 'project_id':
-                Machine.objects.filter(name=server).update(project_id=value)
+		try:
+		        Machine.objects.filter(name=server).update(project_id=value)
+		except UnBoundLocalError, e:
+			print('ERR: ' + str(e))
+		else:
+			print('OK: Project_id was updated.')
+	elif stype == 'server_type':
+		try:
+			Machine.objects.filter(name=server).update(server_type=value)
+                except UnBoundLocalError, e:
+			print('ERR: ' + str(e))
+		else:
+			print('OK: Project_id was updated.')
 	elif stype == 'ram':
-		Machine.objects.filter(name=server).update(ram=value)
+		try:
+			Machine.objects.filter(name=server).update(ram=value)
+		except Error, e:
+			print('EER')
+		else:
+			print('OK')
 	elif stype == 'os':
-		Machine.objects.filter(name=server).update(os=value)
-	elif stype == 'type':
-	        Machine.objects.filter(name=server).update(type=value)
-        elif stype == 'state':
-                Machine.objects.filter(name=server).update(state=value)
+		try:
+			Machine.objects.filter(name=server).update(os=value)
+		except Error, e:
+			print('ERR')
+		else:
+			print('OK')
+	elif stype == 'hw_type':
+		try:
+		    	Machine.objects.filter(name=server).update(type=value)
+		except Error, e:
+			print('ERR')
+		else:
+			print('OK')
+	elif stype == 'state':
+		try:
+   			Machine.objects.filter(name=server).update(state=value)
+		except Error, e:
+			print('ERR')
+		else:
+			print('OK')
 	elif stype == 'inventory': # musi byt unique
 		Machine.objects.filter(name=server).update(inventory=value)
 	elif stype == 'HeliosID': # musi byt unique
@@ -69,25 +98,30 @@ def server_update(vstup):
 	elif stype == 'qr_code': # musi byt unique
 		Machine.objects.filter(name=server).update(qr_code=value)
 	elif stype == 'age':
-		Machine.objects.filter(name=server).update(age=value)
+		try:
+			Machine.objects.filter(name=server).update(age=value)
+		except Error, e:
+			print('ERR')
+		else:
+			print('OK')
 	elif stype == 'serial_number': # musi byt unique
 		Machine.objects.filter(name=server).update(serial_number=value)
 	elif stype == 'rack':
 		Machine.objects.filter(name=server).update(rack=value)
 	elif stype == 'rack_position':
-	        Machine.objects.filter(name=server).update(rack_position=value)
+        	Machine.objects.filter(name=server).update(rack_position=value)
 	elif stype == 'maintainer':
 		try:
-		        Machine.objects.filter(name=server).update(maintainer=value)
+	        	Machine.objects.filter(name=server).update(maintainer=value)
 		except Error, e:
 			print('ERR: ' + str(e))
 		else:
-			print('OK: Maintainer byl aktualizovan.')
+			print('OK: Maintainer was updated.')
 
-#	elif stype == 'machinegroups':
-#                MachineGroup_machine.objects.filter(name=server).update(machinegroups=value)
-        elif stype == 'switch_port':
-                Machine.objects.filter(name=server).update(switch_port=value)
+	elif stype == 'machinegroups':
+        	MachineGroup_machine.objects.filter(name=server).update(machinegroups=value)
+    	elif stype == 'switch_port':
+	        Machine.objects.filter(name=server).update(switch_port=value)
 	elif stype == 'name':
 		try:
 			Machine.objects.filter(name=server).update(name=value)
@@ -97,39 +131,66 @@ def server_update(vstup):
 			print('OK: Server uspesne prejmenovan.')
         elif stype == 'notes':
 		# decode notes
-	        base64_message = value
-        	base64_bytes = base64_message.encode('ascii')
-	        message_bytes = base64.b64decode(base64_bytes)
-        	value = message_bytes.decode('ascii')
-		#print(value)
+		value = decode_text(value)
+		print(value)
+		print(server)
 		# read current note
-		note = Machine.objects.filter(name=server).get()
+		try:
+			note = Machine.objects.filter(name=server).get()
+		except Error, e:
+			print('ERR')
+		else:
+			print('OK')
 		note_current = note.notes
+		print(note_current)
 		if note_current != '':
 			note_new = value + '\n' + note_current
 		else:
 			note_new = value
-                Machine.objects.filter(name=server).update(notes=note_new)
+		try:
+	        	Machine.objects.filter(name=server).update(notes=note_new)
+		except Error, e:
+			print('ERR')
+		else:
+			print('OK')
       	elif stype == 'mgmt' or stype == 'eth' or stype == 'e1' or stype == 'e2' or stype == 'e3':
-#                print(value)
-                mac_addr = value.split('-')[0]
-                sw_port = value.split('-')[1]
+                print(value)
+		value = decode_text(value)
+                mac = value.split(';')[0]
+                port = value.split(';')[1]
+		print(str(mac) + ',' + str(port))
                 try:
-                        Interface.objects.create(machine_id=server, type=stype, mac=mac_addr, port=sw_port)
-                except Error, e:
-                        print('ERR: Zaznam nebyl aktualizovan.' + str(e))
-                else:
-                        print('OK: Zaznam byl aktualizovan.')
+			if stype ==  'eth':
+				primary = 1
+				try:
+	                       		Interface.objects.create(machine_id=server, type=stype, mac=mac, is_primary=primary, port=port)
+				except Exception, e:
+					print('ERR-primary')
+				else:
+					print('OK')
+                   	else:
+				try:
+		                       	Interface.objects.create(machine_id=server, type=stype, mac=mac, port=port)
+        		        except Exception, e:
+		                        print('ERR' + str(e))
+                		else:
+		                        print('OK')
+		except Exception, e:
+			print('ERR')
+		else:
+			print('OK')
+
 	elif stype == 'query':
 		try:
-	                value2 = vstup[4]
-        	        data_in = 'Vstupy: ' + str(server) + ',' + str(stype) + ',' + str(value) + ',' + str(value2)
+	        	value2 = vstup[4]
+   		        data_in = 'Vstupy: ' + str(server) + ',' + str(stype) + ',' + str(value) + ',' + str(value2)
 		except Exception, e:
 			print('Server pravdepodobne neexistuje - Error: ' + str(e))
 		if value == 'project':
 			p = MachineProject.objects.filter(name=value2).get()
 			print('project_id:' + str(p.id))
 		elif value == 'machine':
+			s = Machine.objects.filter(name=server).filter(name=server).get()
 			print('machine_id:' + str(s.id))
 		elif value == 'server_type':
 			sr = ServerType.objects.filter(name=value2).get()
@@ -147,11 +208,8 @@ def server_update(vstup):
 			value2 = decode_text(value2)
 			st = MachineState.objects.filter(name=value2).get()
 			print('state_id:' + str(st.id))
-
-
-
         else:
-                pass
+            pass
 
 
 def user_add():
@@ -164,6 +222,9 @@ def user_add():
 # MAIN
 #os.system('clear')
 os.environ['TERM'] = 'xterm-256color'
+d = os.getcwd()
+LOG_FILE = d + '/machines.log'
+
 try:
     vstup = sys.argv
 except:

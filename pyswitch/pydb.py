@@ -108,7 +108,7 @@ class Group(Base):
 class MachineGroup(Base):
     __tablename__ = 'machines_machinegroup_machines'
     id = Column(Integer, primary_key=True)
-    machinegroup_id = Column(Integer)
+    machinegroup_id = Column(Integer, ForeignKey('machines_machinegroup'))
     machine_id = Column(Integer)
 
 class Type(Base):

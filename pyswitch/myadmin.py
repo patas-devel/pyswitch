@@ -22,6 +22,11 @@ from termcolor import colored
 import ipaddress
 import pyconfig as conf
 
+# TODO
+# prepsat printx
+# nahradit mother_id za machine_id
+#
+
 
 # VARS
 DATA = []
@@ -50,8 +55,9 @@ def printx(text, c):
 
 
 class Dict2class(object):
-    
+
     SERVER = []
+    mother_id = ''
     
     def __init__(self, dictionary):
         for key in dictionary:
@@ -62,12 +68,13 @@ class Dict2class(object):
         attrs = str([x for x in dir(self) if "__" not in x])
         return "<dict2obj: %s="">" % attrs
 
+
 def counter(csv_file):
     f = open(csv_file, 'r')
     params = len(f.readlines())
     g = open(csv_file, 'r')
     servers = len((g.readline()).split(','))
-    printx(f'INFO: CSV PARSER - Input file: {servers} servers | {params} params.', 'b')
+    printx(f'INFO - Parsing csv file: [{csv_file}] content: {servers} servers | {params} params.\n', 'b')
     return servers
 
 def import_auto(csv_file):
@@ -98,8 +105,21 @@ def check_empty(data):
             OK.append(0)
     return True if 0 in OK else False
         
+def encode_net(data, txt):
+    if txt == 'mgmt':
+        mac = (data.mgmt_mac).replace(':', '').lower()
+        port = data.mgmt_port
+        msg = mac + ';' + port
+    elif txt == 'eth' or txt == 'e1' or txt == 'e2' or txt == 'e3':
+        mac = (data.eth_mac).replace(':', '').lower()
+        port = data.eth_port
+        msg = mac + ';' + port
+    message_bytes = msg.encode('ascii')
+    msg_enc = base64.b64encode(message_bytes)
+    msg_out = msg_enc.decode('ascii')
+    return msg_out 
 
-def decode_string(text):
+def decode_string(data, text):
     print(f'Encode: {text}')
     base64_message = text
     base64_bytes = base64_message.encode('ascii')
@@ -118,24 +138,32 @@ def encode_string(text):
 def mother_script_query(data, mother_script):
     data.state = encode_string(data.state)
     mother_query = {
+        'machine_id': sshserver + mother_script + ' ' + str(data.mother) + ' query machine ' + str(data.mother),
         'project_id': sshserver + mother_script + ' ' + str(data.mother) + ' query project ' + str(data.project),
         'type_id': sshserver + mother_script + ' ' + str(data.mother) + ' query type ' + str(data.type),
         'maintainer_id': sshserver + mother_script + ' ' + str(data.mother) + ' query maintainer ' + str(data.maintainer),
         'rack_id': sshserver + mother_script + ' ' + str(data.mother) + ' query rack ' + str(data.rack),
         'state_id': sshserver + mother_script + ' ' + str(data.mother) + ' query state ' + str(data.state),
-        'server_type_id': sshserver + mother_script + ' ' + str(data.mother) + ' query server_type ' + str(data.server_type)
+        'server_type_id': sshserver + mother_script + ' ' + str(data.mother) + ' query server_type ' + str(data.server_type),
+        'machinegroups_id': sshserver + mother_script + ' ' + str(data.mother) + ' query groups ' + encode_string(data.machinegroups)
     }
-    printx('Testovaci dotazy do motheru - bez DB','b')
+    printx(f'INFO - Query to mother over script - server: {data.mother}\n','b')
+    # !!! pozor kdyz neprobehne mother_query - dosadi se data.project= cely command !!!
     for k, v in mother_query.items():
-        #print(f'klic: {k}, value: {v}')
-        mother_query[k] = runcmd(v).split(':')[1]
-    print(mother_query) 
+        #print(f'klic: {k:16} value: {v:50}')
+        if RUNQUERY:
+            mother_query[k] = runcmd(v).split(':')[1]
+        else:
+            pass
+    #print(mother_query)
+    Dict2class.mother_id = mother_query['machine_id']
     data.project = mother_query['project_id']
     data.type = mother_query['type_id']
     data.maintainer = mother_query['maintainer_id']
     data.rack = mother_query['rack_id'] 
     data.state = mother_query['state_id']
     data.server_type = mother_query['server_type_id']
+    data.machinegroups = mother_query['machinegroups_id']
     return data
 
 def mother_update(data, mother_script):
@@ -143,7 +171,7 @@ def mother_update(data, mother_script):
         # nutne prevest na ID
         'project':  sshserver + mother_script + ' ' + str(data.mother) + ' project_id ' + str(data.project),  #name
         # nutne prevest na ID
-        'type':     sshserver + mother_script + ' ' + str(data.mother) + ' type ' + str(data.type),  #name
+        'type':     sshserver + mother_script + ' ' + str(data.mother) + ' hw_type ' + str(data.type),  #name
         # nutne prevest na ID
         'srv_type':   sshserver + mother_script + ' ' + str(data.mother) + ' server_type ' + str(data.server_type),  #name
         'inventory':sshserver + mother_script + ' ' + str(data.mother) + ' inventory ' + str(data.inventory),  #name
@@ -157,27 +185,23 @@ def mother_update(data, mother_script):
         'sn':       sshserver + mother_script + ' ' + str(data.mother) + ' serial_number ' + str(data.serial_number),  #name
         # NUTNE PREVEST na ID
         'rack':     sshserver + mother_script + ' ' + str(data.mother) + ' rack ' + str(data.rack),  #name
-        'rack_pos': sshserver + mother_script + ' ' + str(data.mother) + ' rack_position ' + str(data.rack_position),  #name
+        'rack_pos':   sshserver + mother_script + ' ' + str(data.mother) + ' rack_position ' + str(data.rack_position),  #name
         # NUTNE prevest na ID
         'maintainer': sshserver + mother_script + ' ' + str(data.mother) + ' maintainer ' + str(data.maintainer),  #name
+        'groups':  sshserver + mother_script + ' ' + str(data.mother) + ' machinegroups ' + str(data.machinegroups),
         'switch_port': sshserver + mother_script + ' ' + str(data.mother) + ' switch_port ' + str(data.switch_port),  #name
         'notes':    sshserver + mother_script + ' ' + str(data.mother) + ' notes ' + str(data.notes),  #name
-        # DB INTEFACE
-#        'mg_m':     sshserver + mother_script + ' ' + str(data.mother) + ' mgmt_mac ' + str(data.mgmt_mac),  #name
-#        'mg_p':     sshserver + mother_script + ' ' + str(data.mother) + ' mgmt_port ' + str(data.mgmt_port),  #name
-#        'mg_v':     sshserver + mother_script + ' ' + str(data.mother) + ' mgtm_vlan ' + str(data.mgmt_vlan),  #name
-#        'e_m':      sshserver + mother_script + ' ' + str(data.mother) + ' eth_mac ' + str(data.eth_mac),  #name
-#        'e_p':      sshserver + mother_script + ' ' + str(data.mother) + ' eth_port ' + str(data.eth_port),  #name
-#        'e_v':      sshserver + mother_script + ' ' + str(data.mother) + ' eth_vlan ' + str(data.eth_vlan),  #name
-#        'e1':       sshserver + mother_script + ' ' + str(data.mother) + ' e1_mac ' + str(data.e1_mac),  #name
-#        'e2':       sshserver + mother_script + ' ' + str(data.mother) + ' e2_mac ' + str(data.e2_mac),  #name
-#        'e3':       sshserver + mother_script + ' ' + str(data.mother) + ' e3_mac ' + str(data.e3_mac),  #name
-#        'sw':       sshserver + mother_script + ' ' + str(data.mother) + ' sw_name ' + str(data.sw_name),  #name
-#        'sw_port':  sshserver + mother_script + ' ' + str(data.mother) + ' sw_port ' + str(data.sw_port),  #name
-#        'sw_vlan':  sshserver + mother_script + ' ' + str(data.mother) + ' sw_vlan ' + str(data.sw_vlan),  #name
-#        'sw_desc':  sshserver + mother_script + ' ' + str(data.mother) + ' sw_desc ' + str(data.sw_desc),  #name
-#        # RESIT JAKO POSLEDNI
-#        'name': sshserver + mother_script + ' ' + str(data.mother) + ' name ' + str(data.name),  #name
+        # !! POZOR VKLADA SE MACHINE_ID + specialne se encoduje
+        'mgmt':     sshserver + mother_script + ' ' + str(data.mother_id) + ' mgmt ' + encode_net(data, 'mgmt'),
+        #'mg_v':     sshserver + mother_script + ' ' + str(data.mother) + ' mgtm_vlan ' + str(data.mgmt_vlan),  #name
+        'eth':      sshserver + mother_script + ' ' + str(data.mother_id) + ' eth ' + encode_net(data, 'eth'),
+        #'e_v':      sshserver + mother_script + ' ' + str(data.mother) + ' eth_vlan ' + str(data.eth_vlan),  #name
+        'e1':       sshserver + mother_script + ' ' + str(data.mother_id) + ' e1 ' + encode_net(data, 'e1'),
+        'e2':       sshserver + mother_script + ' ' + str(data.mother_id) + ' e2 ' + encode_net(data, 'e2'),
+        'e3':       sshserver + mother_script + ' ' + str(data.mother_id) + ' e3 ' + encode_net(data, 'e3'),
+        # RESIT JAKO POSLEDNI
+        'name': sshserver + mother_script + ' ' + str(data.mother) + ' name ' + str(data.name),  #name
+        # TODO - nagiosgroup chybi 
     }
     return MOTHER_CMDS
     
@@ -188,11 +212,15 @@ def prepare_data(data):
     # CONTROL INPUT VALUES
     if check_empty(data):
         printx('CSV PARSER: V souboru jsou promenne, ktere nemaji definovou hodnotu - UKONCUJI BEH ZPRACOVANI.','r')
-        exit(0)
+        if CHECK_STOP:
+            exit(0)
+            
+    # DEV
     if ENV == 'DEV':
         try:
-            pom = db.session.query(db.ServerType).filter(db.ServerType.name == data.name).first()
-            data.server_type = pom.id
+            data.mother= 'gmn1003-old' # test purpose
+            pom = db.session.query(db.Machine).filter(db.Machine.name == data.mother).first()
+            data.server_type = pom.server_type_id
             pom = db.session.query(db.Project).filter(db.Project.name == data.project).first()
             data.project = pom.id
             pom = db.session.query(db.Type).filter(db.Type.name == data.type).first()
@@ -203,33 +231,36 @@ def prepare_data(data):
             data.rack = pom.id
             usr = db.session.query(db.User).filter(db.User.username == data.maintainer).first()
             data.maintainer = usr.id
-            # MACHINEGROUPS 
-            #srv = db.session.query(db.Machine).filter(db.Machine.name == server).first()
-            #mg = db.session.query(db.MachineGroup).filter(db.MachineGroup.machine_id == srv.id).first()
-            #obj = db.session.query(db.Group).filter(db.Group.id == mg.machinegroup_id).first()
-            #print(obj.id)
-            #svalue = obj.id
+            # MACHINEGROUPS
+            srv = db.session.query(db.Machine).filter(db.Machine.name == data.mother).first()
+            mg = db.session.query(db.MachineGroup).filter(db.MachineGroup.machine_id == srv.id).first()
+            data.machinegroups = mg.machinegroup_id
+            # NAGIOS GROUPS
+            # gm-cache = 116, gm-storage = 69
+            
+            
         except AttributeError as err:
             print(f'ERR - Chyba cteni z DB {err}')
         else:
             printx('INFO - db query run succesully.', 'b') 
-        # LOCAL VARIABLES    
-        # SWITCH NAME LOW CASE
-        # FIXME: kam to dat ?
-        data.sw_name = data.sw_name.lower()
-        sshserver = 'ssh root@10.20.100.133 '
-        mother_script = sshserver + ' /root/mother/mother/machines/machines_update.py'
-        CMD = mother_update(data, mother_script) 
+            # LOCAL VARIABLES    
+            # SWITCH NAME LOW CASE
+            # FIXME: kam to dat ?
+            data.sw_name = data.sw_name.lower()
+            sshserver = 'ssh root@10.20.100.133 '
+            mother_script = sshserver + ' /root/mother/mother/machines/machines_update.py'
+            CMD = mother_update(data, mother_script) 
 
+    # PREPRO
     elif ENV == 'PREPRO':
         data.sw_name = data.sw_name.lower()
         data.notes = encode_string(data.notes)
         sshserver = 'ssh root@10.20.100.133 '
         mother_script = sshserver + ' /root/mother/mother/machines/machines_update.py'
         mother_script_query(data, mother_script) 
-        mother_update(data, mother_script)
         CMD = mother_update(data, mother_script) 
-        
+
+    # PRODUCTION
     elif ENV == 'PROD':
         data.sw_name = data.sw_name.lower()
         data.notes = encode_string(data.notes)
@@ -240,14 +271,21 @@ def prepare_data(data):
         CMD = mother_update(data, mother_script) 
     
     # PROCESSING DATA        
-    process_data(data, CMD)
+    if RUNPROCS:
+        process_data(data, CMD)
+    
+    # SWITCH 
+    if RUNSWITCH:
+        switch_info(data)
 
         
 def process_data(data, CMD):
-    printx(f'INFO: MOTHER CMD - Processing Server: {data.mother}','b')
+    printx(f'\nINFO: MOTHER CMD - Processing Server: {data.mother}','b')
     printx('----------------------------------------------------------','b')
     for cmd in CMD.values():
         print(cmd)
+        if RUNSSH:
+            runcmd(cmd)
 
 
 
@@ -334,8 +372,11 @@ def runcmd(cmd):
     err = stderr
     # status - 0 ok, 1 fail
     print(f'{out}')
-    #print(f'{err}') # err nic nevypisuje
-    return out
+    if 'Traceback' in out:
+        printx(f'\nERR - when script running on remote host with next of the command: {cmd}\nERR - {out}', 'r')
+        exit(0)
+    else:
+        return out
 
 
 def switch_info(data):
@@ -348,11 +389,11 @@ def switch_info(data):
     print(f'ZADANO - switch: {data.sw_name}, port: {data.sw_port}, vlan: {data.sw_vlan}, desc: {data.sw_desc}\n')
     ss = sw.Switch(data.sw_name, sw.switches[data.sw_name], data.sw_port)
     sw_output = ss.get_config('check', data.sw_port)
-    #print(sw_output)
+    print(sw_output)
     if sw_check_config_state(sw_output):
-        print('START: Spoustim configuraci sw - sw_config.')
+        print('START: Spoustim configuraci sw - sw_config.','b')
     else:
-        printx('STOP: Nebudu spoustet sw configuraci.')
+        printx('STOP: Nebudu spoustet sw configuraci.','r')
 
 
 def switch_info_auto(data):
@@ -442,24 +483,31 @@ def switch_update_auto(vstup):
         printx('################################################################','b')
 
 def init():
-    global DEBUG, ENV, MOTHER_RUN, SWITCH_RUN, MOTHER_DB
-    # PROSTREDI - PROD / PREPRO
+    global DEBUG, ENV, MOTHER_DB, CHECK_STOP, RUNSSH, RUNSWITCH, RUNPROCS, RUNQUERY
+    # PROSTREDI - PROD  | PREPRO | DEV
     ENV = 'PREPRO'
-    MOTHER_RUN = False
-    SWITCH_RUN = False
-    MOTHER_DB = 'LOCAL [09.12.2021 - data from DB (MOTHER prod)]'
-    DEBUG = True
+    CHECK_STOP = False 
+    RUNPROCS = False
+    RUNQUERY = False 
+    RUNSSH = False 
+    RUNSWITCH = True 
+    MOTHER_DB = 'LOCAL DB [Updated: 09.12.2021]'
+    DEBUG = False
     printx(f'# MYADMIN {__version__} #', 'g')
     printx(f'----------------\n', 'g')
     # PROD (script to DB mother prod, script to switch)
     # PREPRO (script to DB mother prepro, script to switch)
     # DEV (locale DB with data from mother prod)
     printx(f'# ENVIRONMENT:\t\t{ENV}', 'r')
-    printx(f'# MOTHER DB:\t\t{MOTHER_DB}', 'y')
-    printx(f'# MOTHER RUN UPDATE:\t{MOTHER_RUN}', 'y')
-    printx(f'# SWITCH RUN UPDATE:\t{SWITCH_RUN}', 'y')
-    printx(f'# DEBUG:\t\t{DEBUG}\n','b')
-    printx(f'-----------------------------------------------------------------\n','y')
+    printx(f'# DEBUG:\t\t{DEBUG} [Set debug mode]','')
+    printx(f'# MOTHER DB:\t\t{MOTHER_DB}', '')
+    printx(f'------------------------------------------------------','')
+    printx(f'# PROCESS DATA:\t\t{RUNPROCS} [Processing data from csv file]', 'y')
+    printx(f'# QUERY DATA:\t\t{RUNQUERY} [Queries to server]', 'y')
+    printx(f'# STOP CHECK:\t\t{CHECK_STOP} [If find any error/mistaches then stop]', 'y')
+    printx(f'# RUN SSH:\t\t{RUNSSH} [Run commands over ssh]', 'y')
+    printx(f'# SWITCH:\t\t{RUNSWITCH} [Connecting to switch and get info and more]', 'y')
+    printx(f'----------------------------------------------------------------------\n','y')
     
 def get_input():
     ''' Parser na vstupni parametry '''

@@ -9,19 +9,19 @@ function push() {
   case $1 in
 
       prod)
-        echo "Copy script to mother prod"
+        echo "Copying script from DIR >>> SERVER MOTHER PROD"
         scp ./$SCRIPT root@mother.cent:$MOTHER_PROD_DIR/
         ;;
       prepro)
-        echo "Copy script to mother prepro"
+        echo "Copying script from DIR >>> SERVER MOTHER PREPRO"
         scp ./$SCRIPT root@10.20.100.133:$MOTHER_PREPRO_DIR/
         ;;
       backup)
-        echo "Copy PREPRO script from SERVER to locale dir."
+        echo "Copying script from SERVER MOTHER PREPRO >>> to DIR"
         scp root@10.20.100.133:/root/mother/mother/machines/machines_update.py .
         ;;
       *)
-        echo "Usage: $0 [prepro | prod | backup] # pomocnik pro kopirovani scriptu do motheru prepro / prod nebo ze serveru here"
+        echo "Usage: $0 [prepro | prod | backup] # prod ... dir to server; prepro dir to server; backup ... server prepro to dir"
         ;;
   esac
 }

@@ -3,7 +3,7 @@
 
 
 __app__ = 'MyAdmin'
-__version__ = "1.42"
+__version__ = "1.5"
 __author__ = "Iceman"
 __copyright__ = "Copyright 2021"
 __license__ = "GPL"
@@ -25,7 +25,7 @@ import pyconfig as conf
 # TODO
 # prepsat printx
 # nahradit mother_id za machine_id
-#
+# pres connect to switch, overit ze je dostupny !
 
 
 # VARS
@@ -96,12 +96,13 @@ def import_auto(csv_file):
 def check_empty(data):
     OK = []
     for attr, value in data.__dict__.items():
-        #print(f'{attr},{value}')
+        if DEBUG:
+            print(f'DEBUG - check empty: {attr},{value}')
         # vyhodit radku se zacatkem na #
         if '#' in attr:
             continue
         if value == '' or value == None or value is None:
-            printx(f'- Promenna {attr} ma prazdnou hodnotu {value}.','r') 
+            printx(f'- Variable: {attr} has empty value:  {value}.','r') 
             OK.append(0)
     return True if 0 in OK else False
         
@@ -147,10 +148,12 @@ def mother_script_query(data, mother_script):
         'server_type_id': sshserver + mother_script + ' ' + str(data.mother) + ' query server_type ' + str(data.server_type),
         'machinegroups_id': sshserver + mother_script + ' ' + str(data.mother) + ' query groups ' + encode_string(data.machinegroups)
     }
-    printx(f'INFO - Query to mother over script - server: {data.mother}\n','b')
+    if RUNQUERY:
+        printx(f'INFO - Query to mother over script - server: {data.mother}\n','b')
     # !!! pozor kdyz neprobehne mother_query - dosadi se data.project= cely command !!!
     for k, v in mother_query.items():
-        #print(f'klic: {k:16} value: {v:50}')
+        if DEBUG:
+            print(f'DEBUG - k: {k:16} v: {v:50}')
         if RUNQUERY:
             mother_query[k] = runcmd(v).split(':')[1]
         else:
@@ -342,18 +345,6 @@ def get_sw_info(vstup, cmd):
     s = sw.Switch(vstup.switch, sw.switches[vstup.switch], vstup.port)
     s.get_info(cmd)
 
-def get_sw_config(vstup):
-    try:
-        name = vstup.switch.split(',')[0]
-        port = vstup.switch.split(',')[1]
-        vlan = vstup.switch.split(',')[2]
-        desc = vstup.switch.split(',')[3]
-    except Error as err:
-        print(f'{err}')
-    else: 
-        print(f'Zadano: {name}, {port}, {vlan}, {desc}')
-        s = sw.Switch(name, sw.switches[name], port)
-        s.get_config('config', port)
     
 def set_sw_desc(vstup, cmd):
     s = sw.Switch(vstup.switch, sw.switches[vstup.switch], vstup.port)
@@ -386,35 +377,22 @@ def switch_info(data):
 #    else:
 #        info = vstup
     printx('# SWITCH INFO ##################################################','b')
-    print(f'ZADANO - switch: {data.sw_name}, port: {data.sw_port}, vlan: {data.sw_vlan}, desc: {data.sw_desc}\n')
+    print(f'INFO - server_mac: {data.eth_mac}, switch: {data.sw_name}, port: {data.sw_port}, vlan: {data.sw_vlan}, desc: {data.sw_desc}\n')
     ss = sw.Switch(data.sw_name, sw.switches[data.sw_name], data.sw_port)
-    sw_output = ss.get_config('check', data.sw_port)
-    print(sw_output)
+    sw_output = ss.get_config('check', data)
+    out = sw_output
+    for k, v in out.items():
+        print(f'{k:10} {v}')
     if sw_check_config_state(sw_output):
-        print('START: Spoustim configuraci sw - sw_config.','b')
+        print('START: RUN SW CONFIGURATION.','b')
+        #switch_config(data)
     else:
-        printx('STOP: Nebudu spoustet sw configuraci.','r')
+        printx('STOP: NEEDS YOUR EYE ON SW CONFIG','r')
 
-
-def switch_info_auto(data):
-    # nactu parametry z motheru
-#    if 'mother' in vstup:
-#        info = mother_info(vstup)
-#    else:
-#        info = vstup
-    printx('# SWITCH INFO ##################################################','b')
-    print(f'ZADANO - switch: {data.sw_name}, port: {data.sw_port}, vlan: {data.sw_vlan}, desc: {data.sw_desc}\n')
-    ss = sw.Switch(data.sw_name, sw.switches[data.sw_name], data.sw_port)
-    sw_output = ss.get_config('check', data.sw_port)
-    #print(sw_output)
-    if sw_check_config_state(sw_output):
-        print('START - sw_config()')
-    else:
-        print('STOP - je nutne zkontrolovat nastaveni na SW')
 
 def sw_check_config_state(data):
   #  print(data)
-    print('HERE')
+    print('INFO - VYHODNOCENI VYSTUPU ZE SWITCHe\n-------------------------------------------------')
     if not data['GE1-UP'] and not data['GE2-UP'] and not data['BAGG-UP']:
         print('ALL PORTS is DOWN.')
         print('RUN SW CONFIG')
@@ -427,10 +405,8 @@ def sw_check_config_state(data):
         return False
     
     
-def switch_update_manual(vstup):
+def switch_config(data):
     printx('# SWITCH UPDATE ##################################################','b')
-    # dodat sw port, ktere overujeme
-    get_sw_info(vstup)
     # Varianta postupnych dotazu na konfiguraci
     text = printx('\nMam nyni pokracovat ve zmene konfigurace portu switche (zmenim vlanu description) ? (ano | ne): ','r')
     choice = input(text)
@@ -440,57 +416,26 @@ def switch_update_manual(vstup):
     else:
         cmds = []
         # CHANGE VLAN + DESC
-        cmd1 = 'interface bridge-aggregation ' + str(vstup.port)
+        cmd1 = 'interface bridge-aggregation ' + str(data.sw_port)
         cmds.append(cmd1)
-        cmd2 = 'port access vlan ' + str(vstup.vlan)
+        cmd2 = 'port access vlan ' + str(data.sw_vlan)
         cmds.append(cmd2)
-        cmd3 = 'description ' + vstup.desc
+        cmd3 = 'description ' + str(data.sw_desc)
         cmds.append(cmd3)
-        set_sw_desc(vstup, cmds)
+        print(cmds)
+        #set_sw_desc(vstup, cmds)
         printx('################################################################','b')
 
-
-def switch_update_auto(vstup):
-    data = mother_info(vstup)
-    try:
-        switch = data.split(',')[0]
-        port = data.split(',')[1]
-        vlan = data.split(',')[2]
-    except Error as err:
-        printx('ERR: Nejsou vsechny parametry pro zmenu configurace switche.', 'r')
-    else:
-        print(f'{switch}, {port}, {vlan}')
-    #printx('# SWITCH SHOW CONFIG ##################################################','b')
-    # vstupni informace jsou z motheru - ale u novych nebude vlan, tzn. ze bude to brat z excelu nebo ?
-    #get_sw_config(data)
-    # Varianta postupnych dotazu na konfiguraci
-    exit(0)
-    text = printx('\nMam nyni pokracovat ve zmene konfigurace portu switche (zmenim vlanu description) ? (ano | ne): ','r')
-    choice = input(text)
-    if choice.lower() == 'ne':
-        #   print('Ukoncuji pripojeni.')
-        exit(0) # koncim
-    else:
-        cmds = []
-        # CHANGE VLAN + DESC
-        cmd1 = 'interface bridge-aggregation ' + str(vstup.port)
-        cmds.append(cmd1)
-        cmd2 = 'port access vlan ' + str(vstup.vlan)
-        cmds.append(cmd2)
-        cmd3 = 'description ' + vstup.desc
-        cmds.append(cmd3)
-        set_sw_desc(vstup, cmds)
-        printx('################################################################','b')
 
 def init():
     global DEBUG, ENV, MOTHER_DB, CHECK_STOP, RUNSSH, RUNSWITCH, RUNPROCS, RUNQUERY
     # PROSTREDI - PROD  | PREPRO | DEV
     ENV = 'PREPRO'
-    CHECK_STOP = False 
+    CHECK_STOP = False
     RUNPROCS = False
     RUNQUERY = False 
     RUNSSH = False 
-    RUNSWITCH = True 
+    RUNSWITCH = True
     MOTHER_DB = 'LOCAL DB [Updated: 09.12.2021]'
     DEBUG = False
     printx(f'# MYADMIN {__version__} #', 'g')
@@ -499,15 +444,15 @@ def init():
     # PREPRO (script to DB mother prepro, script to switch)
     # DEV (locale DB with data from mother prod)
     printx(f'# ENVIRONMENT:\t\t{ENV}', 'r')
-    printx(f'# DEBUG:\t\t{DEBUG} [Set debug mode]','')
     printx(f'# MOTHER DB:\t\t{MOTHER_DB}', '')
     printx(f'------------------------------------------------------','')
+    printx(f'# DEBUG:\t\t{DEBUG} [Set debug mode]','y')
     printx(f'# PROCESS DATA:\t\t{RUNPROCS} [Processing data from csv file]', 'y')
     printx(f'# QUERY DATA:\t\t{RUNQUERY} [Queries to server]', 'y')
     printx(f'# STOP CHECK:\t\t{CHECK_STOP} [If find any error/mistaches then stop]', 'y')
     printx(f'# RUN SSH:\t\t{RUNSSH} [Run commands over ssh]', 'y')
     printx(f'# SWITCH:\t\t{RUNSWITCH} [Connecting to switch and get info and more]', 'y')
-    printx(f'----------------------------------------------------------------------\n','y')
+    printx(f'----------------------------------------------------------------------------\n','y')
     
 def get_input():
     ''' Parser na vstupni parametry '''

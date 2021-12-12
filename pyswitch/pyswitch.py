@@ -58,8 +58,8 @@ switches = {
 }
 
 # without port
-def commands(cmd, port):
-    port = str(port)
+def commands(cmd, data):
+    port = str(data.sw_port)
     if cmd == 'check':
         check_sw_config = {
             1: 'display interface brief | incl GE1/0/' + port,
@@ -96,7 +96,7 @@ CHECK = {
 1: 'The brief information of interface(s) under bridge mode:\nLink: ADM - administratively down; Stby - standby\nSpeed or Duplex: (a)/A - auto; H - half; F - full\nType: A - access; T - trunk; H - hybrid\nInterface            Link Speed   Duplex Type PVID Description\nGE1/0/30             DOWN auto    A      A    1601\n', 
 2: 'The brief information of interface(s) under bridge mode:\nLink: ADM - administratively down; Stby - standby\nSpeed or Duplex: (a)/A - auto; H - half; F - full\nType: A - access; T - trunk; H - hybrid\nInterface            Link Speed   Duplex Type PVID Description\nGE2/0/30             DOWN auto    A      A    1601\n', 
 3: 'The brief information of interface(s) under bridge mode:\nLink: ADM - administratively down; Stby - standby\nSpeed or Duplex: (a)/A - auto; H - half; F - full\nType: A - access; T - trunk; H - hybrid\nInterface            Link Speed   Duplex Type PVID Description\nBAGG30               DOWN auto    A      A    1601\n', 
-4: 'MAC ADDR       VLAN ID  STATE          PORT INDEX               AGING TIME(s)\n\n  ---  No mac address found  ---\n', 
+4: 'MAC ADDR       VLAN ID  STATE          PORT INDEX               AGING TIME(s)\n3473-5a9f-de6c 3        Learned        Bridge-Aggregation2      AGING\n---  1 mac address(es) found  ---\n',
 5: 'MAC ADDR       VLAN ID  STATE          PORT INDEX               AGING TIME(s)\n\n  ---  No mac address found  ---\n', 
 6: 'MAC ADDR       VLAN ID  STATE          PORT INDEX               AGING TIME(s)\n\n  ---  No mac address found  ---\n', 
 7: '\nLoadsharing Type: Shar -- Loadsharing, NonS -- Non-Loadsharing\nPort Status: S -- Selected, U -- Unselected\nFlags:  A -- LACP_Activity, B -- LACP_Timeout, C -- Aggregation,\n        D -- Synchronization, E -- Collecting, F -- Distributing,\n        G -- Defaulted, H -- Expired\n\nAggregation Interface: Bridge-Aggregation30\nAggregation Mode: Dynamic\nLoadsharing Type: Shar\nSystem ID: 0x8000, b8af-67e7-0a15\nLocal:\n  Port             Status  Priority Oper-Key  Flag\n--------------------------------------------------------------------------------\n  GE1/0/30         U       32768    29        {ACG}\n  GE2/0/30         U       32768    29        {ACG}\nRemote:\n  Actor            Partner Priority Oper-Key  SystemID               Flag\n--------------------------------------------------------------------------------\n  GE1/0/30         0       32768    0         0x8000, 0000-0000-0000 {EF}\n  GE2/0/30         0       32768    0         0x8000, 0000-0000-0000 {EF}', 
@@ -135,45 +135,110 @@ class Switch():
     def __repr__(self):
         return f'DC: {self.sw_dc}, SWITCH: {self.sw_name}, IP: {self.sw_ip}, PORT: {self.sw_port}, DESC: {self.sw_desc}' 
 
-    def check_config(self, data, port):
+    def parser(self, name, vstup, idata):
+        lines = vstup.splitlines()
+        port = name + str(idata.sw_port)
+        res = ''
+        for line in lines:
+            if port in line:
+                if 'UP' in line:
+                    res = True
+                else:
+                    res = False
+        return res
+
+    def find_mac(self, v, idata):
+        DEBUG = True
+        mac_server = idata.eth_mac.replace(':','')
+        if v.count('No mac address found') == 1:
+            return False
+        else:
+            if '1 mac address(es) found' in v:
+                lines = v.splitlines()
+                for line in lines:
+                    if 'Learned' in line:
+                        mac_on_port = line.split(' ')[0].replace('-', '')
+                        if DEBUG:
+                            return mac_server + ' | ' + mac_on_port
+                        return True if mac_server ==  mac_on_port else False
+            else:
+                return 'STOP - MORE MAC ADDRESS'
+
+    def parser_bagg(self, vstup, idata):
+        PORTS = []
+        lines = vstup.splitlines()
+        port1 = 'GE1/0/' + str(idata.sw_port)
+        port2 = 'GE2/0/' + str(idata.sw_port)
+        for line in lines:
+            if port1 in line:
+                if line.split()[1] == 'S':
+                    PORTS.append(1)
+            if port2 in line:
+                if line.split()[1] == 'S':
+                    PORTS.append(1)
+        if len(PORTS) == 2:
+            return True
+        else:
+            return False
+            
+    def detect_vlan(self, vstup, idata):
+        a = '0000' # not defined
+        lines = vstup.splitlines()
+        for line in lines:
+            if 'access vlan' in line:
+                a = line.split()[3]
+        if a == '0000':
+            return '0000'
+        else:    
+            return a
+                
+
+    def check_config(self, data, idata):
+        #print(f'{data}')
+        srv_mac = (idata.eth_mac).replace(':','')
+        port = idata.sw_port
+        #print(srv_mac)
         # TODO
         # nutne zadat port presne jinak to vypise mnohem vice portu ge1/0/2 -> 0/21 0/22xxx
+        print('SW CHECK: Starting ...........................')
         RESULT = {}
         for k, v in data.items():
             if k == 1:
-                RESULT['GE1-UP'] = True if v.count('GE1/0/' + port + '              UP') == 1 else False
+                RESULT['GE1-UP'] = self.parser('GE1/0/', v, idata)
             elif k == 2:
-                RESULT['GE2-UP'] = True if v.count('GE2/0/' + port + '              UP') == 1 else False
+                RESULT['GE2-UP'] = self.parser('GE2/0/', v, idata)
             elif k == 3:
-                RESULT['BAGG-UP'] = True if v.count('BAGG' + port + '                UP') == 1 else False
+                RESULT['BAGG-UP'] = self.parser('BAGG', v, idata)
             elif k == 4:
-                RESULT['GE1-MAC'] = False if v.count('No mac address found') ==1 else True
+                RESULT['GE1-MAC'] = self.find_mac(v, idata) 
             elif k == 5:
-                RESULT['GE2-MAC'] = False if v.count('No mac address found') ==1 else True
+                RESULT['GE2-MAC'] = self.find_mac(v, idata) 
             elif k == 6:
-                RESULT['BAGG-MAC'] = False if v.count('No mac address found') ==1 else True
+                RESULT['BAGG-MAC'] = self.find_mac(v, idata)
             elif k == 7:
-                if v.count('GE1/0/' + port + '          S') == 1 and v.count('GE2/0/' + port + '          S'):
-                    a = 'JE TAM SS'
-                else:
-                    a = 'NENI TAM SS'
-                RESULT['BAGG-VERB'] = a
+                # SS = True >> nekonfigurovat
+                RESULT['BAGG-S'] = self.parser_bagg(v, idata)
             elif k == 8:
                 a = 'loopback: yes' if v.count('loopback') == 1 else 'loopback: no'
                 b = 'broadcast: yes' if v.count('broadcast') == 1 else 'broadcast: no'
                 c = 'link-aggregation: yes' if v.count('link-aggregation group ' + str(port)) == 1 else 'link-aggregation: no'
-                res = (a, b, c)
+                #d = 'vlan 3: yes' if v.count('vlan 3') == 1 else 'vlan 3: no'
+                d = 'vlan: ' + str(self.detect_vlan(v, idata))
+                res = (a, b, c, d)
                 RESULT['GE1-CONF'] = res
             elif k == 9:
                 a = 'loopback: yes' if v.count('loopback') == 1 else 'loopback: no'
                 b = 'broadcast: yes' if v.count('broadcast') == 1 else 'broadcast: no'
                 c = 'link-aggregation: yes' if v.count('link-aggregation group ' + str(port)) == 1 else 'link-aggregation: no'
-                res = (a, b, c)
+                #d = 'vlan 3: yes' if v.count('vlan 3') == 1 else 'vlan 3: no'
+                d = 'vlan: ' + str(self.detect_vlan(v, idata))
+                res = (a, b, c, d)
                 RESULT['GE2-CONF'] = res 
             elif k == 10:
                 a = 'bagg mode dynamic: yes' if v.count('link-aggregation mode dynamic') == 1 else 'bagg mode dynamic: no'
-                b =  ''
-                res = (a, b)
+#                b = 'vlan 3: yes' if v.count('vlan 3') == 1 else 'vlan 3: no'
+                c = 'vlan: ' + str(self.detect_vlan(v, idata))
+                res = (a, c)
                 RESULT['BAGG-CONF'] = res
         #print(RESULT)
         return RESULT
@@ -184,16 +249,19 @@ class Switch():
         print(f'{Fore.BLUE}{self.sw_out}{Style.RESET_ALL}')
         self.sw_disconnect()
     
-    def get_config(self, cmd, port):
+    def get_config(self, cmd, idata):
         self.sw_connect()
-        for k, cmd in commands(cmd, port).items():
+        for k, cmd in commands(cmd, idata).items():
             print(cmd)   
             data = self.device.send_command(cmd)
             Switch.OUTPUT[k] = data
             print(f'{Fore.BLUE}{data}{Style.RESET_ALL}')
         self.sw_disconnect()    
-        return self.check_config(Switch.OUTPUT, port)
-        #self.check_config(Switch.OUTPUT, port)
+        return self.check_config(Switch.OUTPUT, idata)
+        # TEST from CHECK dict
+        #for k, v in CHECK.items():
+        #    print(f'{k} {v}')
+        #return self.check_config(CHECK, idata )
 
     def set_config_old(self, note):
         self.sw_connect()
@@ -201,8 +269,7 @@ class Switch():
         configcmds=[self.sw_port, self.sw_note]
         #configcmds=['interface g1/0/26', 'description TESTING1']
         self.sw_out = self.device.send_config_set(configcmds)
-        if DEBUG:
-            print(self.sw_out)
+        #print(self.sw_out)
         self.sw_disconnect()
      
     

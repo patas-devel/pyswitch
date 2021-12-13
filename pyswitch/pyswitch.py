@@ -21,6 +21,23 @@ from netmiko import ConnectHandler
 from colorama import Fore, Style
 import pyconfig as conf
 
+# INFO
+""""
+   interface GigabitEthernet1/0/35
+ description gmn1112
+ port access vlan 1310
+ loopback-detection enable
+ broadcast-suppression 3
+ port link-aggregation group 35
+
+ interface Bridge-Aggregation35
+ description gmn1112
+ port access vlan 1310
+ link-aggregation mode dynamic
+   
+    
+    
+"""
 
 # VAR
 # aa08, ab08,ab10,ab11,ab12 nejsou
@@ -57,9 +74,10 @@ switches = {
      'ab14.ttc': '10.33.240.44',
 }
 
-# without port
 def commands(cmd, data):
     port = str(data.sw_port)
+    vlan = str(data.sw_vlan)
+    desc = str(data.sw_desc)
     if cmd == 'check':
         check_sw_config = {
             1: 'display interface brief | incl GE1/0/' + port,
@@ -78,20 +96,28 @@ def commands(cmd, data):
         }
         return check_sw_config
     elif cmd == 'config':
-        make_config_sw = [
-            'interface GigabitEthernet 1/0/' + port,
-            'port link-aggregation group ' + port,
-            'description gmnXXXX',
+        # TODO - nekdy prepsat a pouzivat, zatim useless
+        update_sw_config = {
+            'BAGG': (
+                'interface Bridge-Aggregation ' + port,
+                'link-aggregation mode dynamic',
+                'port access vlan ' + vlan,
+                'description ' + desc
+                ),
+            'GE1': (
+                'interface GigabitEthernet 1/0/' + port,
+                'port link-aggregation group ' + port,
+                'description ' + desc
+                ),
+            'GE2': (
             'interface GigabitEthernet 2/0/' + port,
             'port link-aggregation group ' + port,
-            'description gmnXXXX',
-            'interface Bridge-Aggregation' + port,
-            'link-aggregation mode dynamic',
-            'port access vlan ' # FIXME potrebuji jeste vlanu
-            'description gmnXXXX'
-        ]
-
-
+            'description ' + desc,
+                )
+        }
+        return update_sw_config
+       
+        
 CHECK = {
 1: 'The brief information of interface(s) under bridge mode:\nLink: ADM - administratively down; Stby - standby\nSpeed or Duplex: (a)/A - auto; H - half; F - full\nType: A - access; T - trunk; H - hybrid\nInterface            Link Speed   Duplex Type PVID Description\nGE1/0/30             DOWN auto    A      A    1601\n', 
 2: 'The brief information of interface(s) under bridge mode:\nLink: ADM - administratively down; Stby - standby\nSpeed or Duplex: (a)/A - auto; H - half; F - full\nType: A - access; T - trunk; H - hybrid\nInterface            Link Speed   Duplex Type PVID Description\nGE2/0/30             DOWN auto    A      A    1601\n', 
@@ -182,13 +208,13 @@ class Switch():
             return False
             
     def detect_vlan(self, vstup, idata):
-        a = '0000' # not defined
+        a = '0' # not defined
         lines = vstup.splitlines()
         for line in lines:
             if 'access vlan' in line:
                 a = line.split()[3]
-        if a == '0000':
-            return '0000'
+        if a == '0':
+            return '0'
         else:    
             return a
                 
@@ -219,6 +245,7 @@ class Switch():
                 # SS = True >> nekonfigurovat
                 RESULT['BAGG-S'] = self.parser_bagg(v, idata)
             elif k == 8:
+                # TODO: doplnit o pocet radek konfigurace
                 a = 'loopback: yes' if v.count('loopback') == 1 else 'loopback: no'
                 b = 'broadcast: yes' if v.count('broadcast') == 1 else 'broadcast: no'
                 c = 'link-aggregation: yes' if v.count('link-aggregation group ' + str(port)) == 1 else 'link-aggregation: no'
@@ -243,25 +270,28 @@ class Switch():
         #print(RESULT)
         return RESULT
     
-    def set_desc(self, cmd):
-        self.sw_connect()
-        self.sw_out = self.device.send_config_set(cmd)
-        print(f'{Fore.BLUE}{self.sw_out}{Style.RESET_ALL}')
-        self.sw_disconnect()
     
     def get_config(self, cmd, idata):
         self.sw_connect()
         for k, cmd in commands(cmd, idata).items():
-            print(cmd)   
+            print(cmd)
             data = self.device.send_command(cmd)
             Switch.OUTPUT[k] = data
             print(f'{Fore.BLUE}{data}{Style.RESET_ALL}')
-        self.sw_disconnect()    
+        self.sw_disconnect()
         return self.check_config(Switch.OUTPUT, idata)
         # TEST from CHECK dict
-        #for k, v in CHECK.items():
-        #    print(f'{k} {v}')
-        #return self.check_config(CHECK, idata )
+#        for k, v in CHECK.items():
+#            print(f'{k} {v}')
+#        return self.check_config(CHECK, idata )
+
+
+    def set_config(self, cmds):
+        print(cmds)
+        #self.sw_connect()
+        #self.sw_out = self.device.send_config_set(cmds)
+        #print(f'{Fore.BLUE}{self.sw_out}{Style.RESET_ALL}')
+        #self.sw_disconnect()
 
     def set_config_old(self, note):
         self.sw_connect()

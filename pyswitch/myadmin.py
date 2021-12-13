@@ -89,7 +89,7 @@ def import_auto(csv_file):
     if DEBUG:
         print(f'DEBUG - Show data values: {DATA[6].name}')
     # GRR - NUMBER OF SERVERS TO PROCESS
-    for srv in DATA[2:10]:
+    for srv in DATA[1:2]:
         prepare_data(srv)
             
 
@@ -376,7 +376,7 @@ def switch_info(data):
         print(f'{k:10} {v}')
     if sw_check_output(sw_output):
         printx('START - RUN SWITCH UPDATE CONFIGURATION.','g')
-        #switch_config(data)
+        switch_config(data)
     else:
         printx('QUITING.....','r')
 
@@ -392,9 +392,9 @@ def sw_check_output(sw_out):
     ge2_vlan = sw_out['GE2-CONF'][3].split(':')[1].strip() 
     bagg_dynamic = sw_out['BAGG-CONF'][0].split(':')[1].strip()
     bagg_vlan = sw_out['BAGG-CONF'][1].split(':')[1].strip()
-    print(f'{ge1_loop}, {ge1_broad}, {ge1_link}')
-    print(f'{ge2_loop}, {ge2_broad}, {ge2_link}')
-    print(f'{bagg_dynamic}')
+    print(f'{ge1_loop}, {ge1_broad}, {ge1_link}, {ge1_vlan}')
+    print(f'{ge2_loop}, {ge2_broad}, {ge2_link}, {ge2_vlan}')
+    print(f'{bagg_dynamic}, {bagg_vlan}')
     print('\nINFO - VYHODNOCENI VYSTUPU ZE SWITCHe\n-------------------------------------------------\n')
     if not sw_out['GE1-UP'] and not sw_out['GE2-UP'] and not sw_out['BAGG-UP'] and not sw_out['BAGG-S']:
         printx('INFO - All ports is DOWN and BAGG not selected ports.\nWe can run update sw config.','g')
@@ -405,7 +405,7 @@ def sw_check_output(sw_out):
     elif not sw_out['GE1-MAC'] and not sw_out['GE2-MAC'] and sw_out['BAGG-MAC'] and not sw_out['BAGG-S'] and \
             bagg_vlan == '3':
         return True
-    elif ge1_link != 'yes' or ge2_link != 'yes' or bagg_dynamic != 'yes':
+    elif ge1_vlan == '0' or ge2_vlan == '0' or bagg_vlan == '0':
         printx('WARNING: CHECK SWITCH PORT CONFIGURATION !!!!','r')
         return False
     else:

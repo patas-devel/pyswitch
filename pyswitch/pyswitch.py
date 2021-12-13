@@ -188,7 +188,7 @@ class Switch():
                             return mac_server + ' | ' + mac_on_port
                         return True if mac_server ==  mac_on_port else False
             else:
-                return 'STOP - MORE MAC ADDRESS'
+                return True
 
     def parser_bagg(self, vstup, idata):
         PORTS = []
@@ -335,69 +335,7 @@ def mac_normalize(mac):
     return m
     
 
-def test_mac_find(mac):
-    mac = mac_normalize(mac)
-    # sw ab13.ttc - hosting
-    #sw = Switch('','10.33.240.43',)
-    #cmd = 'display mac-address interface g2/0/43'
-    #sw.get_info(cmd)
-    f = open('sw.txt', 'r')
-    parser = f.read()
-    #print(parser)
-    lines = []
-    if 'found' in parser:
-        with open('sw.txt') as f:
-            for line in f: 
-                line = line.strip() #or some other preprocessing
-                lines.append(line) #storing everything in memory!
-        mac_sw = lines[1].split()[0]
-    else:
-        print('Na portu neni mac adresa')
-    if mac_sw == mac:
-        out = 'mac serveru: ' + str(mac) + '\nmac na switchi: ' + str(mac_sw)
-        if DEBUG:
-            print(out)
-        print('Mac adresy se shoduji')
-    else:
-        print('Mac adresy jsou ruzne !')
-
-def mac_find(mac):
-    mac = mac_normalize(mac)
-    # sw ab13.ttc - hosting
-    sw = Switch('AB13.TTC','10.33.240.43')
-    cmd = 'display mac-address interface g2/0/43'
-    sw.get_info(cmd)
-    print(sw.sw_out)
-    sw_out = str(sw.sw_out).split()
-    if DEBUG:
-        print(sw_out)
-    lines = []
-    if 'found' in sw_out:
-        if DEBUG:
-            print('found')
-        mac_sw = sw_out[9]
-        print(mac_sw)
-    else:
-        print('Na portu neni mac adresa')
-    if mac_sw == mac:
-        out = 'mac serveru: ' + str(mac) + '\nmac na switchi: ' + str(mac_sw)
-        print(out)
-        print('Mac adresy se shoduji')
-    else:
-        print('Mac adresy jsou ruzne, nemenim konfiguraci !!!')
-
-def show_config():
-    sw = 'AB13.TTC'
-    ip = '10.33.240.43'
-    port = '43'
-    sw = Switch('',ip, port)
-    cmd = 'display current-configuration interface g1/0/' + str(port)
-    sw.get_info(cmd)
-    cmd = 'display current-configuration interface g2/0/' + str(port)
-    sw.get_info(cmd)
-    cmd = 'display link-aggregation verbose Bridge-Aggregation' + str(port)
-    sw.get_info(cmd)
-    
+  
 #mac_find('0021-5ef0-adb4')
 #show_config('','')
 #mac_find('00215ef0adb4')

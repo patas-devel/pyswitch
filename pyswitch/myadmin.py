@@ -27,7 +27,6 @@ import pyconfig as conf
 # nahradit mother_id za machine_id
 # pres connect to switch, overit ze je dostupny !
 
-
 # VARS
 DATA = []
 mother_prepro = '10.20.100.133'
@@ -89,7 +88,8 @@ def import_auto(csv_file):
         DATA.append(d)
     if DEBUG:
         print(f'DEBUG - Show data values: {DATA[6].name}')
-    for srv in DATA[1:2]:
+    # GRR - NUMBER OF SERVERS TO PROCESS
+    for srv in DATA[2:10]:
         prepare_data(srv)
             
 
@@ -341,15 +341,6 @@ def mother_info(vstup):
             print('{0:10}\t{1}'.format(k, v))
 
 
-def get_sw_info(vstup, cmd):
-    s = sw.Switch(vstup.switch, sw.switches[vstup.switch], vstup.port)
-    s.get_info(cmd)
-
-    
-def set_sw_desc(vstup, cmd):
-    s = sw.Switch(vstup.switch, sw.switches[vstup.switch], vstup.port)
-    s.set_desc(cmd)
-
 def runcmd(cmd):
     #return sub.getoutput(cmd)
     ssh_cmd = cmd
@@ -383,48 +374,68 @@ def switch_info(data):
     out = sw_output
     for k, v in out.items():
         print(f'{k:10} {v}')
-    if sw_check_config_state(sw_output):
-        print('START: RUN SW CONFIGURATION.','b')
+    if sw_check_output(sw_output):
+        printx('START - RUN SWITCH UPDATE CONFIGURATION.','g')
         #switch_config(data)
     else:
-        printx('STOP: NEEDS YOUR EYE ON SW CONFIG','r')
+        printx('QUITING.....','r')
 
-
-def sw_check_config_state(data):
+def sw_check_output(sw_out):
   #  print(data)
-    print('INFO - VYHODNOCENI VYSTUPU ZE SWITCHe\n-------------------------------------------------')
-    if not data['GE1-UP'] and not data['GE2-UP'] and not data['BAGG-UP']:
-        print('ALL PORTS is DOWN.')
-        print('RUN SW CONFIG')
+    ge1_loop = sw_out['GE1-CONF'][0].split(':')[1].strip()
+    ge1_broad = sw_out['GE1-CONF'][1].split(':')[1].strip()
+    ge1_link = sw_out['GE1-CONF'][2].split(':')[1].strip()
+    ge1_vlan = sw_out['GE1-CONF'][3].split(':')[1].strip() 
+    ge2_loop = sw_out['GE2-CONF'][0].split(':')[1].strip()
+    ge2_broad = sw_out['GE2-CONF'][1].split(':')[1].strip()
+    ge2_link = sw_out['GE2-CONF'][2].split(':')[1].strip()
+    ge2_vlan = sw_out['GE2-CONF'][3].split(':')[1].strip() 
+    bagg_dynamic = sw_out['BAGG-CONF'][0].split(':')[1].strip()
+    bagg_vlan = sw_out['BAGG-CONF'][1].split(':')[1].strip()
+    print(f'{ge1_loop}, {ge1_broad}, {ge1_link}')
+    print(f'{ge2_loop}, {ge2_broad}, {ge2_link}')
+    print(f'{bagg_dynamic}')
+    print('\nINFO - VYHODNOCENI VYSTUPU ZE SWITCHe\n-------------------------------------------------\n')
+    if not sw_out['GE1-UP'] and not sw_out['GE2-UP'] and not sw_out['BAGG-UP'] and not sw_out['BAGG-S']:
+        printx('INFO - All ports is DOWN and BAGG not selected ports.\nWe can run update sw config.','g')
         return True
-    elif data['GE1-MAC'] and data['GE2-MAC'] and data['BAGG-MAC']:
-        print('NO MAC ADDRESSES')
-        print('RUN SW CONFIG')
+    elif not sw_out['GE1-MAC'] and not sw_out['GE2-MAC'] and not sw_out['BAGG-MAC'] and not sw_out['BAGG-S']:
+        printx('INFO - NO MACs on ports and BAGG not selected ports.\n We can run update sw config.','g')
         return True
+    elif not sw_out['GE1-MAC'] and not sw_out['GE2-MAC'] and sw_out['BAGG-MAC'] and not sw_out['BAGG-S'] and \
+            bagg_vlan == '3':
+        return True
+    elif ge1_link != 'yes' or ge2_link != 'yes' or bagg_dynamic != 'yes':
+        printx('WARNING: CHECK SWITCH PORT CONFIGURATION !!!!','r')
+        return False
     else:
+        printx('WARNING: CHECK SWITCH PORT CONFIGURATION !!!!','r')
         return False
     
-    
 def switch_config(data):
-    printx('# SWITCH UPDATE ##################################################','b')
+    printx('# SWITCH UPDATE COFIGURATION ###########################################','b')
     # Varianta postupnych dotazu na konfiguraci
-    text = printx('\nMam nyni pokracovat ve zmene konfigurace portu switche (zmenim vlanu description) ? (ano | ne): ','r')
-    choice = input(text)
-    if choice.lower() == 'ne':
-        #   print('Ukoncuji pripojeni.')
-        exit(0) # koncim
-    else:
-        cmds = []
+#    text = printx('\nContinue to update switch configuration ? (change - vlan and description) ? ( Yes | No): ','r')
+#    choice = input()
+    choice = 'yes'
+    if choice.lower() == 'yes':
+        CMDS = []
         # CHANGE VLAN + DESC
-        cmd1 = 'interface bridge-aggregation ' + str(data.sw_port)
-        cmds.append(cmd1)
-        cmd2 = 'port access vlan ' + str(data.sw_vlan)
-        cmds.append(cmd2)
-        cmd3 = 'description ' + str(data.sw_desc)
-        cmds.append(cmd3)
-        print(cmds)
-        #set_sw_desc(vstup, cmds)
+        c1 = 'interface bridge-aggregation ' + str(data.sw_port)
+        c2 = 'port access vlan ' + str(data.sw_vlan)
+        c3 = 'description ' + str(data.sw_desc)
+        c4 = 'interface GigabitEthernet 1/0/' + str(data.sw_port)
+        c5 = 'description ' + str(data.sw_desc)
+        c6 = 'interface GigabitEthernet 2/0/' + str(data.sw_port)
+        c7 = 'description ' + str(data.sw_desc)
+        CMDS = (c1, c2, c3, c4, c5, c6, c7)
+        print(f'commands: {CMDS}')
+        print(f'switch info: {data.sw_name},{data.sw_vlan}, {data.sw_port}')
+        s = sw.Switch(data.sw_name, sw.switches[data.sw_name], data.sw_port)
+        s.set_config(CMDS)
         printx('################################################################','b')
+    else:
+        printx('Exiting ...', '')
 
 
 def init():

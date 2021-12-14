@@ -24,8 +24,10 @@ import pyconfig as conf
 
 # TODO
 # prepsat printx
-# nahradit mother_id za machine_id
 # pres connect to switch, overit ze je dostupny !
+# connect to switch over hostname
+# vyhodnoti - vystup -> vse ok probehlo
+# na konci app
 
 # VARS
 DATA = []
@@ -89,7 +91,7 @@ def import_auto(csv_file):
     if DEBUG:
         print(f'DEBUG - Show data values: {DATA[6].name}')
     # GRR - NUMBER OF SERVERS TO PROCESS
-    for srv in DATA[1:2]:
+    for srv in DATA[10:11]:
         prepare_data(srv)
             
 
@@ -111,10 +113,19 @@ def encode_net(data, txt):
         mac = (data.mgmt_mac).replace(':', '').lower()
         port = data.mgmt_port
         msg = mac + ';' + port
-    elif txt == 'eth' or txt == 'e1' or txt == 'e2' or txt == 'e3':
+    elif txt == 'eth':
         mac = (data.eth_mac).replace(':', '').lower()
         port = data.eth_port
-        msg = mac + ';' + port
+    elif txt == 'e1':
+        mac = (data.e1_mac).replace(':', '').lower()
+        port = data.eth_port
+    elif txt == 'e2':
+        mac = (data.e2_mac).replace(':', '').lower()
+        port = data.eth_port
+    elif txt == 'e3':
+        mac = (data.e3_mac).replace(':', '').lower()
+        port = data.eth_port
+    msg = mac + ';' + port
     message_bytes = msg.encode('ascii')
     msg_enc = base64.b64encode(message_bytes)
     msg_out = msg_enc.decode('ascii')
@@ -177,13 +188,13 @@ def mother_update(data, mother_script):
         'type':     sshserver + mother_script + ' ' + str(data.mother) + ' hw_type ' + str(data.type),  #name
         # nutne prevest na ID
         'srv_type':   sshserver + mother_script + ' ' + str(data.mother) + ' server_type ' + str(data.server_type),  #name
-        'inventory':sshserver + mother_script + ' ' + str(data.mother) + ' inventory ' + str(data.inventory),  #name
+        #'inventory':sshserver + mother_script + ' ' + str(data.mother) + ' inventory ' + str(data.inventory),  #name
         # nutne prevest na ID
         'state':    sshserver + mother_script + ' ' + str(data.mother) + ' state ' + str(data.state),  #name
         'cpu':      sshserver + mother_script + ' ' + str(data.mother) + ' cpu ' + str(data.cpu),  #name
         'ram':      sshserver + mother_script + ' ' + str(data.mother) + ' ram ' + str(data.ram),  #name
         'os':       sshserver + mother_script + ' ' + str(data.mother) + ' os ' + str(data.os),  #name
-        'qr':       sshserver + mother_script + ' ' + str(data.mother) + ' qr_code ' + str(data.qr_code),  #name
+        #'qr':       sshserver + mother_script + ' ' + str(data.mother) + ' qr_code ' + str(data.qr_code),  #name
         'purchase': sshserver + mother_script + ' ' + str(data.mother) + ' purchase_date ' + str(data.purchase_date),  #name
         'sn':       sshserver + mother_script + ' ' + str(data.mother) + ' serial_number ' + str(data.serial_number),  #name
         # NUTNE PREVEST na ID
@@ -278,7 +289,7 @@ def prepare_data(data):
         process_data(data, CMD)
     
     # SWITCH 
-    if RUNSWITCH:
+    if SWITCH_INFO:
         switch_info(data)
 
         
@@ -397,17 +408,19 @@ def sw_check_output(sw_out):
     print(f'{bagg_dynamic}, {bagg_vlan}')
     print('\nINFO - VYHODNOCENI VYSTUPU ZE SWITCHe\n-------------------------------------------------\n')
     if not sw_out['GE1-UP'] and not sw_out['GE2-UP'] and not sw_out['BAGG-UP'] and not sw_out['BAGG-S']:
-        printx('INFO - All ports is DOWN and BAGG not selected ports.\nWe can run update sw config.','g')
+        printx('OK: INFO - All ports is DOWN and BAGG not selected ports.\nRUN SW CONFIG UPDATE.','g')
         return True
     elif not sw_out['GE1-MAC'] and not sw_out['GE2-MAC'] and not sw_out['BAGG-MAC'] and not sw_out['BAGG-S']:
-        printx('INFO - NO MACs on ports and BAGG not selected ports.\n We can run update sw config.','g')
+        printx('OK: INFO - NO MACs on ports and BAGG not selected ports.\nRUN SW CONFIG UPDATE.','g')
         return True
     elif not sw_out['GE1-MAC'] and not sw_out['GE2-MAC'] and sw_out['BAGG-MAC'] and not sw_out['BAGG-S'] and \
             bagg_vlan == '3':
+        printx('OK: INFO - NO MAC[GE1,GE2], but MAC[BAGG], but BAGG-S not selected.\nRUN SW CONFIG UPDATE.','g')       
         return True
-    elif ge1_vlan == '0' or ge2_vlan == '0' or bagg_vlan == '0':
+    # TODO - doresit 
+    elif ge1_vlan == '0' or ge2_vlan == '0':
         printx('WARNING: CHECK SWITCH PORT CONFIGURATION !!!!','r')
-        return False
+        return True
     else:
         printx('WARNING: CHECK SWITCH PORT CONFIGURATION !!!!','r')
         return False
@@ -431,22 +444,25 @@ def switch_config(data):
         CMDS = (c1, c2, c3, c4, c5, c6, c7)
         print(f'commands: {CMDS}')
         print(f'switch info: {data.sw_name},{data.sw_vlan}, {data.sw_port}')
-        s = sw.Switch(data.sw_name, sw.switches[data.sw_name], data.sw_port)
-        s.set_config(CMDS)
+        if SWITCH_CONF:
+            pass
+            s = sw.Switch(data.sw_name, sw.switches[data.sw_name], data.sw_port)
+            s.set_config(CMDS)
         printx('################################################################','b')
     else:
         printx('Exiting ...', '')
 
 
 def init():
-    global DEBUG, ENV, MOTHER_DB, CHECK_STOP, RUNSSH, RUNSWITCH, RUNPROCS, RUNQUERY
+    global DEBUG, ENV, MOTHER_DB, CHECK_STOP, RUNSSH, SWITCH_INFO, SWITCH_CONF, RUNPROCS, RUNQUERY
     # PROSTREDI - PROD  | PREPRO | DEV
-    ENV = 'PREPRO'
+    ENV = 'PROD'
     CHECK_STOP = False
-    RUNPROCS = False
-    RUNQUERY = False 
-    RUNSSH = False 
-    RUNSWITCH = True
+    RUNPROCS = True 
+    RUNQUERY = True
+    RUNSSH = True
+    SWITCH_INFO = True
+    SWITCH_CONF = True
     MOTHER_DB = 'LOCAL DB [Updated: 09.12.2021]'
     DEBUG = False
     printx(f'# MYADMIN {__version__} #', 'g')
@@ -462,7 +478,8 @@ def init():
     printx(f'# QUERY DATA:\t\t{RUNQUERY} [Queries to server]', 'y')
     printx(f'# STOP CHECK:\t\t{CHECK_STOP} [If find any error/mistaches then stop]', 'y')
     printx(f'# RUN SSH:\t\t{RUNSSH} [Run commands over ssh]', 'y')
-    printx(f'# SWITCH:\t\t{RUNSWITCH} [Connecting to switch and get info and more]', 'y')
+    printx(f'# SWITCH_INFO:\t\t{SWITCH_INFO} [Connecting to switch and get info and more]', 'y')
+    printx(f'# SWITCH_CONF:\t\t{SWITCH_CONF} [Connecting to switch and update configuration]', 'y')
     printx(f'----------------------------------------------------------------------------\n','y')
     
 def get_input():

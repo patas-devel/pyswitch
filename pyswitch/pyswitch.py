@@ -163,7 +163,7 @@ class Switch():
 
     def parser(self, name, vstup, idata):
         lines = vstup.splitlines()
-        port = name + str(idata.sw_port)
+        port = name + str(idata.sw_port) + ' '
         res = ''
         for line in lines:
             if port in line:
@@ -288,20 +288,10 @@ class Switch():
 
     def set_config(self, cmds):
         print(cmds)
-        #self.sw_connect()
-        #self.sw_out = self.device.send_config_set(cmds)
-        #print(f'{Fore.BLUE}{self.sw_out}{Style.RESET_ALL}')
-        #self.sw_disconnect()
-
-    def set_config_old(self, note):
         self.sw_connect()
-        self.sw_note = 'description ' + note 
-        configcmds=[self.sw_port, self.sw_note]
-        #configcmds=['interface g1/0/26', 'description TESTING1']
-        self.sw_out = self.device.send_config_set(configcmds)
-        #print(self.sw_out)
+        self.sw_out = self.device.send_config_set(cmds)
+        print(f'{Fore.BLUE}{self.sw_out}{Style.RESET_ALL}')
         self.sw_disconnect()
-     
     
     def runcmd(self, cmd):
         return subprocess.getoutput(cmd)
